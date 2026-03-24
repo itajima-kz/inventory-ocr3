@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>棚卸アプリ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- jsQR：QRコードリアルタイム解析 -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <style>
+    /* ===== リセット & ベース ===== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg:           #f0f4fb;
+      --surface:      #ffffff;
+      --surface2:     #e8eef8;
+      --blue:         #2e6be0;
+      --blue-dk:      #1a4db0;
+      --blue-lt:      #c8d8f8;
+      --blue-mid:     #5b8aea;
+      --header-from:  #1a3fa0;
+      --header-to:    #0d2870;
+      --btn-reg-from: #1877f0;
+      --btn-reg-to:   #0d58c0;
+      --btn-re-from:  #1aa8c8;
+      --btn-re-to:    #0d78a0;
+      --btn-cam-from: #2e8b57;
+      --btn-cam-to:   #1a5c38;
+      --btn-ocr-from: #7b3ff2;
+      --btn-ocr-to:   #5a1fd1;
+      --cyan:         #40a8c8;
+      --cyan-dk:      #286a90;
+      --cyan-lt:      #ecf8fd;
+      --filled:       #1860c0;
+      --filled-lt:    #d0e4ff;
+      --error:        #d63030;
+      --error-lt:     #ffe0e0;
+      --warn:         #e07800;
+      --warn-lt:      #fff3e0;
+      --text:         #0e1e3a;
+      --text-mid:     #3a5a8a;
+      --shadow-sm:    0 3px 12px rgba(20,50,120,0.10);
+      --radius:       20px;
+      --radius-sm:    14px;
+      --radius-xs:    10px;
+      --font:         'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', sans-serif;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      font-family: var(--font);
+      color: var(--text);
+      font-size: 17px;
+    }
+
+    .app-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 0 0 80px;
+    }
+
+    /* ===== ヘッダー ===== */
+    .app-header {
+      background: linear-gradient(135deg, var(--header-from) 0%, var(--header-to) 100%);
+      color: #fff;
+      padding: 22px 20px 18px;
+      border-radius: 0 0 var(--radius) var(--radius);
+      box-shadow: 0 6px 28px rgba(10,30,100,0.35);
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .app-header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+
+    .app-header .subtitle {
+      font-size: 15px;
+      opacity: 0.92;
+      margin-top: 6px;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+
+    /* ===== カード共通 ===== */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 20px;
+      margin: 14px 14px 0;
+      border: 2px solid var(--blue-lt);
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .card-label {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--blue-dk);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-label::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 20px;
+      background: linear-gradient(180deg, var(--blue), var(--cyan));
+      border-radius: 3px;
+    }
+
+    /* ===== スキャンカード ===== */
+    .scan-card {
+      background: linear-gradient(145deg, #f4f7fd, #e4ecfc);
+      border: 2px solid var(--blue-mid);
+      padding: 18px 18px 16px;
+    }
+
+    /* ===== モード切替タブ（3タブ） ===== */
+    .scan-mode-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .scan-tab {
+      flex: 1;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 4px;
+      border: 2px solid var(--blue-lt);
+      border-radius: var(--radius-xs);
+      background: var(--surface2);
+      color: var(--text-mid);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.18s;
+      letter-spacing: 0.02em;
+      line-height: 1.3;
+      -webkit-appearance: none;
+    }
+
+    .scan-tab.active {
+      background: linear-gradient(135deg, var(--blue), var(--blue-dk));
+      color: #fff;
+      border-color: var(--blue-dk);
+      box-shadow: 0 3px 12px rgba(30,80,200,0.3);
+    }
+
+    .scan-tab.active.ocr-tab {
+      background: linear-gradient(135deg, var(--btn-ocr-from), var(--btn-ocr-to));
+      border-color: var(--btn-ocr-to);
+      box-shadow: 0 3px 12px rgba(90,31,209,0.35);
+    }
+
+    /* ===== スキャンエリア（正方形） ===== */
+    .scan-square {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: rgba(255,255,255,0.92);
+      border: 2.5px solid var(--blue-lt);
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .scan-square.camera-on.mode-qr {
+      border-color: #2e8b57;
+      box-shadow: 0 0 0 4px rgba(46,139,87,0.22);
+    }
+
+    .scan-square.camera-on.mode-ocr {
+      border-color: #7b3ff2;
+      box-shadow: 0 0 0 4px rgba(123,63,242,0.22);
+    }
+
+    /* カメラ映像 */
+    #cameraVideo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: calc(var(--radius-sm) - 3px);
+      display: none;
+    }
+
+    /* スキャン成功フラッシュ */
+    #scanFlash {
+      position: absolute;
+      inset: 0;
+      background: rgba(46,107,224,0.5);
+      border-radius: calc(var(--radius-sm) - 3px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.08s;
+      z-index: 3;
+    }
+
+    /* QR用 走査ライン */
+    #scanLine {
+      display: none;
+      position: absolute;
+      left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        var(--btn-re-from) 30%,
+        var(--blue) 50%,
+        var(--btn-re-from) 70%,
+        transparent 100%);
+      box-shadow: 0 0 14px rgba(26,168,200,0.9);
+      border-radius: 2px;
+      z-index: 4;
+      animation: scanline-move 2s linear infinite;
+    }
+
+    @keyframes scanline-move {
+      0%   { top: 5%; }
+      100% { top: 93%; }
+    }
+
+    /* OCR用 ガイド枠 */
+    #ocrGuide {
+      display: none;
+      position: absolute;
+      left: 8%; width: 84%;
+      top: 25%; height: 50%;
+      border: 2.5px solid #a855f7;
+      border-radius: 8px;
+      box-shadow: 0 0 0 2000px rgba(0,0,0,0.38);
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    #ocrGuide.scanning::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: #a855f7;
+      animation: ocr-scan 1s ease-in-out infinite;
+    }
+
+    @keyframes ocr-scan {
+      0%   { top: 0; opacity: 1; }
+      90%  { top: calc(100% - 2px); opacity: 1; }
+      100% { top: calc(100% - 2px); opacity: 0; }
+    }
+
+    /* 四隅マーカー */
+    .qr-corner {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-color: var(--blue);
+      border-style: solid;
+      border-width: 0;
+      z-index: 5;
+      transition: border-color 0.2s;
+    }
+    .qr-corner.tl { top:10px;    left:10px;   border-top-width:4px;    border-left-width:4px;   border-radius:6px 0 0 0; }
+    .qr-corner.tr { top:10px;    right:10px;  border-top-width:4px;    border-right-width:4px;  border-radius:0 6px 0 0; }
+    .qr-corner.bl { bottom:10px; left:10px;   border-bottom-width:4px; border-left-width:4px;   border-radius:0 0 0 6px; }
+    .qr-corner.br { bottom:10px; right:10px;  border-bottom-width:4px; border-right-width:4px;  border-radius:0 0 6px 0; }
+
+    .scan-square.camera-on.mode-qr  .qr-corner { border-color: #2e8b57; }
+    .scan-square.camera-on.mode-ocr .qr-corner { border-color: #a855f7; }
+    .scan-square.camera-on .scan-icon { display: none; }
+
+    .scan-icon {
+      font-size: 52px;
+      line-height: 1;
+      opacity: 0.18;
+      user-select: none;
+      pointer-events: none;
+      position: absolute;
+      z-index: 1;
+    }
+
+    .scan-label {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-mid);
+      text-align: center;
+      padding: 0 24px;
+      position: relative;
+      z-index: 6;
+    }
+
+    .scan-square.camera-on .scan-label {
+      color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.40);
+      border-radius: 8px;
+      padding: 6px 16px;
+    }
+
+    /* jsQR解析用 非表示キャンバス */
+    #qrCanvas { display: none; }
+
+    /* OCRデバッグプレビュー */
+    #ocrDebugWrap {
+      display: none;
+      margin: 6px 0;
+      text-align: center;
+    }
+    #ocrDebugWrap p {
+      font-size: 10px;
+      color: #888;
+      margin-bottom: 3px;
+    }
+    #ocrDebugCanvas {
+      max-width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    /* カメラ起動ボタン */
+    .btn-cam-start {
+      margin-top: 12px;
+      width: 100%;
+      font-family: var(--font);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 17px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #fff;
+      transition: transform 0.12s, opacity 0.2s;
+      -webkit-appearance: none;
+    }
+    .btn-cam-start:active { transform: scale(0.96); }
+    .btn-cam-start.qr-btn {
+      background: linear-gradient(135deg, var(--btn-cam-from) 0%, var(--btn-cam-to) 100%);
+      box-shadow: 0 4px 16px rgba(30,100,60,0.4);
+    }
+    .btn-cam-start.ocr-btn {
+      background: linear-gradient(135deg, var(--btn-ocr-from) 0%, var(--btn-ocr-to) 100%);
+      box-shadow: 0 4px 16px rgba(90,31,209,0.4);
+    }
+
+    /* カメラ停止ボタン */
+    #btnCameraStop {
+      margin-top: 12px;
+      width: 100%;
+      font-family: var(--font);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 17px 12px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #fff;
+      background: linear-gradient(135deg, #c0392b 0%, #8e1a10 100%);
+      box-shadow: 0 4px 16px rgba(180,40,30,0.4);
+      transition: transform 0.12s, opacity 0.2s;
+      -webkit-appearance: none;
+    }
+    #btnCameraStop:active { transform: scale(0.96); }
+
+    /* ヒントテキスト */
+    .scan-hint {
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-mid);
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      font-weight: 500;
+    }
+
+    /* OCR図番入力エリア */
+    .ocr-result-wrap {
+      display: none;
+      margin-top: 10px;
+      padding: 12px;
+      background: #1a1a2e;
+      border-radius: var(--radius-xs);
+    }
+    .ocr-result-wrap.visible { display: block; }
+    .ocr-part-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    #ocrPartInput {
+      width: 100%;
+      font-size: 28px;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 2px;
+      background: #111;
+      color: #00ff88;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      padding: 8px;
+      outline: none;
+      font-family: monospace;
+      -webkit-appearance: none;
+    }
+    #ocrPartInput:focus    { border-color: #00ff88; }
+    #ocrPartInput.notfound { color: #ff5555; }
+    #ocrPartInput.editing  { border-color: #ffaa00; color: #ffaa00; }
+    .ocr-part-hint {
+      font-size: 11px;
+      color: #888;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    /* ===== 登録情報エリア ===== */
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .info-field { flex: 1; }
+
+    .field-label {
+      font-size: 15px;
+      color: var(--blue-dk);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .field-value {
+      background: var(--surface2);
+      border: 2px solid var(--blue-lt);
+      border-radius: var(--radius-xs);
+      padding: 12px 14px;
+      font-size: 17px;
+      color: var(--text);
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      word-break: break-all;
+      font-weight: 500;
+    }
+
+    .field-value.filled {
+      background: var(--filled-lt);
+      border-color: var(--filled);
+      color: var(--filled);
+      font-weight: 700;
+    }
+
+    .field-value.unmatch {
+      background: var(--error-lt);
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    .field-value.warn {
+      background: var(--warn-lt);
+      border-color: var(--warn);
+      color: var(--warn);
+    }
+
+    /* 数量入力 */
+    #quantityInput {
+      width: 100%;
+      font-family: var(--font);
+      font-size: 36px;
+      font-weight: 700;
+      color: #0a2050;
+      background: var(--cyan-lt);
+      border: 3px solid var(--cyan);
+      border-radius: var(--radius-xs);
+      padding: 12px 14px;
+      text-align: center;
+      outline: none;
+      -webkit-appearance: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    #quantityInput:focus {
+      border-color: var(--cyan-dk);
+      box-shadow: 0 0 0 4px rgba(64,168,200,0.25);
+    }
+
+    /* セレクト */
+    select {
+      width: 100%;
+      font-family: var(--font);
+      font-size: 17px;
+      color: var(--text);
+      background: var(--surface);
+      border: 2px solid var(--blue-lt);
+      border-radius: var(--radius-xs);
+      padding: 14px 44px 14px 14px;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%232e6be0' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(46,107,224,0.15);
+    }
+
+    /* ===== ボタン行 ===== */
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin: 16px 14px 0;
+    }
+
+    .btn {
+      flex: 1;
+      font-family: var(--font);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      border: none;
+      border-radius: var(--radius);
+      padding: 20px 12px;
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.2s, opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      -webkit-appearance: none;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.20);
+    }
+    .btn:active { transform: scale(0.95); }
+
+    .btn-register {
+      background: linear-gradient(135deg, var(--btn-reg-from) 0%, var(--btn-reg-to) 100%);
+      box-shadow: 0 5px 20px rgba(20,80,200,0.45);
+      flex: 2;
+    }
+
+    .btn-register:disabled {
+      opacity: 0.38;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-rescan {
+      background: linear-gradient(135deg, var(--btn-re-from) 0%, var(--btn-re-to) 100%);
+      box-shadow: 0 5px 18px rgba(20,120,160,0.40);
+    }
+
+    /* ===== 登録完了モーダル ===== */
+    #modalOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    #modalOverlay.show { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 32px 28px;
+      max-width: 320px;
+      width: 88%;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    }
+    .modal-icon  { font-size: 52px; margin-bottom: 12px; }
+    .modal-msg   { font-size: 20px; font-weight: 800; color: #1a6e1a; margin-bottom: 8px; }
+    .modal-sub   { font-size: 13px; color: #666; margin-bottom: 24px; }
+    .modal-ok {
+      width: 100%;
+      padding: 14px;
+      font-size: 17px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #00b09b, #5cb85c);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      cursor: pointer;
+      font-family: var(--font);
+    }
+
+    /* ===== トースト ===== */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      color: #fff;
+      padding: 14px 24px;
+      border-radius: var(--radius);
+      font-size: 17px;
+      font-weight: 700;
+      max-width: 360px;
+      width: calc(100% - 36px);
+      text-align: center;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.28);
+      z-index: 100;
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #toast.show    { transform: translateX(-50%) translateY(0); opacity: 1; }
+    #toast.success { background: linear-gradient(135deg, var(--btn-reg-from), var(--btn-reg-to)); }
+    #toast.updated { background: linear-gradient(135deg, var(--cyan), var(--cyan-dk)); }
+    #toast.error   { background: linear-gradient(135deg, var(--error), #a01010); }
+    #toast.info    { background: linear-gradient(135deg, var(--btn-ocr-from), var(--btn-ocr-to)); }
+
+    /* ===== ローディング ===== */
+    #loading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(240,244,251,0.82);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px;
+      backdrop-filter: blur(4px);
+    }
+    #loading.show { display: flex; }
+    .spinner {
+      width: 52px; height: 52px;
+      border: 5px solid var(--blue-lt);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 17px; color: var(--blue-dk); font-weight: 700; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    ::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- 登録完了モーダル -->
+<div id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-icon">✅</div>
+    <div class="modal-msg" id="modalMsg">登録しました！</div>
+    <div class="modal-sub" id="modalSub"></div>
+    <button class="modal-ok" onclick="closeModal()">OK</button>
+  </div>
+</div>
+
+<div class="app-wrapper">
+
+  <!-- ヘッダー -->
+  <header class="app-header">
+    <h1>📦 棚 卸 ア プ リ</h1>
+    <div class="subtitle" id="currentDate">読込中...</div>
+  </header>
+
+  <!-- スキャンカード -->
+  <div class="card scan-card" id="scanCard">
+    <div class="card-label">読取モード</div>
+
+    <!-- モード切替タブ（3種） -->
+    <div class="scan-mode-tabs">
+      <button class="scan-tab active" id="tabQr"  onclick="switchMode('qr')">📷 QRカメラ</button>
+      <button class="scan-tab ocr-tab" id="tabOcr" onclick="switchMode('ocr')">🔍 OCR図番</button>
+      <button class="scan-tab" id="tabUsb" onclick="switchMode('usb')">🔌 USBスキャナ</button>
+    </div>
+
+    <!-- スキャンエリア（正方形） -->
+    <div class="scan-square" id="scanSquare">
+      <div class="qr-corner tl"></div>
+      <div class="qr-corner tr"></div>
+      <div class="qr-corner bl"></div>
+      <div class="qr-corner br"></div>
+      <video id="cameraVideo" playsinline autoplay muted></video>
+      <div id="scanLine"></div>
+      <div id="ocrGuide"></div>
+      <div id="scanFlash"></div>
+      <div class="scan-icon" id="scanIcon">⬛</div>
+      <div class="scan-label" id="scanLabel">モードを選択してカメラを起動</div>
+    </div>
+
+    <canvas id="qrCanvas"></canvas>
+
+    <!-- カメラ起動ボタン（モードで切替） -->
+    <button id="btnCameraStart" class="btn-cam-start qr-btn" onclick="startCamera()">
+      📷 カメラを起動してスキャン
+    </button>
+
+    <!-- カメラ停止ボタン -->
+    <button id="btnCameraStop" onclick="stopCamera()">
+      ⏹ カメラを停止
+    </button>
+
+    <!-- USB用 非表示入力 -->
+    <input type="text" id="barcodeInput"
+      style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;"
+      autocomplete="off" autocorrect="off" autocapitalize="none"
+      spellcheck="false" inputmode="none" tabindex="-1" aria-hidden="true">
+
+    <div class="scan-hint" id="scanHint">📷 カメラボタンをタップしてスキャン開始</div>
+
+    <!-- OCRデバッグプレビュー（任意で表示） -->
+    <div id="ocrDebugWrap">
+      <p>▼ OCRに送っている画像</p>
+      <canvas id="ocrDebugCanvas"></canvas>
+    </div>
+
+    <!-- OCR結果・図番入力 -->
+    <div class="ocr-result-wrap" id="ocrResultWrap">
+      <div class="ocr-part-label">読み取った図番</div>
+      <input id="ocrPartInput" type="text" value="----" readonly
+        placeholder="OCR読取待ち..."
+        oninput="onOcrPartEdit()" onblur="onOcrPartBlur()">
+      <div class="ocr-part-hint" id="ocrPartHint">OCR読み取り後、手修正も可能です</div>
+    </div>
+  </div>
+
+  <!-- 登録情報エリア -->
+  <div class="card" id="infoCard">
+    <div class="card-label">登録情報</div>
+
+    <div style="margin-bottom:10px;">
+      <span class="field-label">図番</span>
+      <div class="field-value" id="zunoDisplay">―</div>
+    </div>
+
+    <div style="margin-bottom:10px;">
+      <span class="field-label">品名</span>
+      <div class="field-value" id="hinmeiDisplay">―</div>
+    </div>
+
+    <div style="margin-bottom:10px;">
+      <span class="field-label">サイズ</span>
+      <div class="field-value" id="sizeDisplay">―</div>
+    </div>
+
+    <div style="margin-bottom:10px;">
+      <span class="field-label">数量</span>
+      <input type="number" id="quantityInput" placeholder="0" min="0" step="1" inputmode="numeric">
+    </div>
+
+    <div style="margin-bottom:10px;">
+      <span class="field-label">棚卸部署</span>
+      <select id="departmentSelect">
+        <option value="">― 選択してください ―</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:10px;">
+      <span class="field-label">担当者</span>
+      <select id="personnelSelect">
+        <option value="">― 選択してください ―</option>
+      </select>
+    </div>
+
+    <div>
+      <span class="field-label">在庫区分</span>
+      <select id="inventoryTypeSelect">
+        <option value="">― 選択してください ―</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ボタン行 -->
+  <div class="btn-row">
+    <button class="btn btn-rescan" onclick="resetAll()">🔄 再スキャン</button>
+    <button class="btn btn-register" id="registerBtn" onclick="registerData()" disabled>✅ 登録</button>
+  </div>
+
+</div>
+
+<!-- ローディング -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">処理中...</div>
+</div>
+
+<!-- トースト -->
+<div id="toast"></div>
+
+<script>
+// ============================================================
+//  ★★★ 設定エリア：GASデプロイURLを貼り付けてください ★★★
+// ============================================================
+var GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOY_URL/exec';
+// ============================================================
+
+// ============================================================
+//  状態変数
+// ============================================================
+var currentMode   = 'qr';     // 'qr' | 'ocr' | 'usb'
+var cameraStream  = null;
+var cameraActive  = false;
+var rafId         = null;
+var isScanning    = false;
+var ocrTimer      = null;
+var ocrRunning    = false;
+var currentZuno   = null;
+var currentHinmei = '';
+var currentSize   = '';
+
+// ============================================================
+//  初期化
+// ============================================================
+window.addEventListener('load', function () {
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+  loadMasterData();
+  setupUsbInput();
+  switchMode('qr');
+});
+
+// ============================================================
+//  日時表示
+// ============================================================
+function updateDateTime() {
+  var now = new Date();
+  var pad = function(n){ return String(n).padStart(2,'0'); };
+  document.getElementById('currentDate').textContent =
+    now.getFullYear() + '/' + pad(now.getMonth()+1) + '/' + pad(now.getDate()) +
+    '  ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+}
+
+// ============================================================
+//  GAS API 呼び出し共通
+//    action: 'getMaster' | 'lookup' | 'ocrSearch' | 'register'
+// ============================================================
+function callGAS(action, params) {
+  return new Promise(function(resolve, reject) {
+    var isGet = (action === 'getMaster' || action === 'lookup');
+    if (isGet) {
+      var qs = 'action=' + encodeURIComponent(action);
+      Object.keys(params || {}).forEach(function(k){
+        qs += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+      });
+      fetch(GAS_URL + '?' + qs, { method: 'GET' })
+        .then(function(r){ return r.json(); })
+        .then(resolve)
+        .catch(reject);
+    } else {
+      var body = Object.assign({ action: action }, params || {});
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(body)
+      })
+        .then(function(r){ return r.json(); })
+        .then(resolve)
+        .catch(reject);
+    }
+  });
+}
+
+// ============================================================
+//  マスタデータ取得（部署・担当者・在庫区分）
+// ============================================================
+function loadMasterData() {
+  callGAS('getMaster', {})
+    .then(function(data){
+      fillSelect('departmentSelect',    data.departments    || []);
+      fillSelect('personnelSelect',     data.personnel      || []);
+      fillSelect('inventoryTypeSelect', data.inventoryTypes || []);
+    })
+    .catch(function(){
+      showToast('⚠️ マスタデータ取得失敗。URLを確認してください', 'error');
+    });
+}
+
+function fillSelect(id, items) {
+  var sel = document.getElementById(id);
+  items.forEach(function(d){
+    var opt = document.createElement('option');
+    opt.value = d; opt.textContent = d;
+    sel.appendChild(opt);
+  });
+}
+
+// ============================================================
+//  モード切替
+// ============================================================
+function switchMode(mode) {
+  if (cameraActive) stopCamera();
+  currentMode = mode;
+
+  // タブ状態
+  document.getElementById('tabQr').classList.toggle('active', mode === 'qr');
+  document.getElementById('tabOcr').classList.toggle('active', mode === 'ocr');
+  document.getElementById('tabUsb').classList.toggle('active', mode === 'usb');
+
+  var startBtn = document.getElementById('btnCameraStart');
+  var stopBtn  = document.getElementById('btnCameraStop');
+  var square   = document.getElementById('scanSquare');
+  var hint     = document.getElementById('scanHint');
+  var label    = document.getElementById('scanLabel');
+  var ocrWrap  = document.getElementById('ocrResultWrap');
+
+  // OCRデバッグ非表示
+  document.getElementById('ocrDebugWrap').style.display = 'none';
+
+  if (mode === 'qr') {
+    startBtn.className = 'btn-cam-start qr-btn';
+    startBtn.innerHTML = '📷 カメラを起動してスキャン';
+    startBtn.style.display = '';
+    stopBtn.style.display  = 'none';
+    label.textContent  = '📷 下のボタンでカメラを起動';
+    hint.textContent   = '📷 カメラボタンをタップしてスキャン開始';
+    ocrWrap.classList.remove('visible');
+    square.className   = 'scan-square';
+    document.getElementById('scanIcon').textContent = '⬛';
+
+  } else if (mode === 'ocr') {
+    startBtn.className = 'btn-cam-start ocr-btn';
+    startBtn.innerHTML = '🔍 OCRスキャン開始';
+    startBtn.style.display = '';
+    stopBtn.style.display  = 'none';
+    label.textContent  = '🔍 下のボタンでOCR開始';
+    hint.textContent   = '🔍 ガイド枠に図番を合わせてください';
+    ocrWrap.classList.add('visible');
+    square.className   = 'scan-square';
+    document.getElementById('scanIcon').textContent = '🔍';
+
+  } else { // usb
+    startBtn.style.display = 'none';
+    stopBtn.style.display  = 'none';
+    label.textContent  = '🔌 スキャン待機中…';
+    hint.textContent   = '🔌 USBスキャナでQRコードをスキャンしてください';
+    ocrWrap.classList.remove('visible');
+    square.className   = 'scan-square';
+    document.getElementById('scanIcon').textContent = '🔌';
+    setTimeout(focusBarcodeInput, 100);
+  }
+}
+
+// ============================================================
+//  カメラ起動（QR / OCR 共用）
+// ============================================================
+function startCamera() {
+  if (cameraActive) return;
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('❌ このブラウザはカメラに対応していません', 'error');
+    return;
+  }
+
+  navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: { ideal: 'environment' },
+      width:  { ideal: 1280 },
+      height: { ideal: 720 }
+    }
+  })
+  .then(function(stream){
+    cameraStream = stream;
+    cameraActive = true;
+
+    var video  = document.getElementById('cameraVideo');
+    var square = document.getElementById('scanSquare');
+    video.srcObject = stream;
+    video.style.display = 'block';
+    document.getElementById('btnCameraStart').style.display = 'none';
+    document.getElementById('btnCameraStop').style.display  = 'flex';
+    square.className = 'scan-square camera-on mode-' + currentMode;
+
+    if (currentMode === 'qr') {
+      document.getElementById('scanLine').style.display = 'block';
+      document.getElementById('ocrGuide').style.display = 'none';
+      document.getElementById('scanLabel').textContent  = '📷 QRコードを枠内に合わせてください';
+      document.getElementById('scanHint').textContent   = '🔍 自動認識中…';
+      video.onloadedmetadata = function(){ video.play().then(qrScanLoop); };
+
+    } else if (currentMode === 'ocr') {
+      document.getElementById('scanLine').style.display = 'none';
+      document.getElementById('ocrGuide').style.display = 'block';
+      document.getElementById('scanLabel').textContent  = '🔍 ガイド枠に図番を合わせてください';
+      document.getElementById('scanHint').textContent   = '🔍 2秒ごとに自動OCR解析中…';
+      video.onloadedmetadata = function(){ video.play().then(startOcrLoop); };
+    }
+  })
+  .catch(function(err){
+    var msg = 'カメラを起動できませんでした';
+    if (err.name === 'NotAllowedError')  msg = 'カメラのアクセスが拒否されました。設定から許可してください。';
+    if (err.name === 'NotFoundError')    msg = 'カメラが見つかりません。';
+    if (err.name === 'NotSupportedError')msg = 'HTTPS環境が必要です。';
+    showToast('❌ ' + msg, 'error');
+  });
+}
+
+// ============================================================
+//  カメラ停止
+// ============================================================
+function stopCamera() {
+  clearInterval(ocrTimer); ocrTimer = null;
+  if (rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  if (cameraStream){
+    cameraStream.getTracks().forEach(function(t){ t.stop(); });
+    cameraStream = null;
+  }
+  var video = document.getElementById('cameraVideo');
+  video.srcObject = null;
+  video.style.display = 'none';
+
+  document.getElementById('scanLine').style.display   = 'none';
+  document.getElementById('ocrGuide').style.display   = 'none';
+  document.getElementById('btnCameraStart').style.display =
+    (currentMode === 'usb') ? 'none' : '';
+  document.getElementById('btnCameraStop').style.display  = 'none';
+  document.getElementById('scanSquare').className = 'scan-square';
+  cameraActive = false; isScanning = false; ocrRunning = false;
+
+  if (currentMode === 'qr') {
+    document.getElementById('scanLabel').textContent = '📷 下のボタンでカメラを起動';
+    document.getElementById('scanHint').textContent  = '📷 カメラボタンをタップしてスキャン開始';
+  } else if (currentMode === 'ocr') {
+    document.getElementById('scanLabel').textContent = '🔍 下のボタンでOCR開始';
+    document.getElementById('scanHint').textContent  = '🔍 ガイド枠に図番を合わせてください';
+  }
+}
+
+// ============================================================
+//  QR解析ループ
+// ============================================================
+function qrScanLoop() {
+  if (!cameraActive || currentMode !== 'qr') return;
+  var video  = document.getElementById('cameraVideo');
+  var canvas = document.getElementById('qrCanvas');
+
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var code = jsQR(imgData.data, imgData.width, imgData.height, {
+      inversionAttempts: 'dontInvert'
+    });
+    if (code && !isScanning) {
+      isScanning = true;
+      showScanFlash();
+      stopCamera();
+      processBarcode(code.data);
+      return;
+    }
+  }
+  rafId = requestAnimationFrame(qrScanLoop);
+}
+
+function showScanFlash() {
+  var f = document.getElementById('scanFlash');
+  f.style.opacity = '1';
+  setTimeout(function(){ f.style.opacity = '0'; }, 300);
+}
+
+// ============================================================
+//  OCR解析ループ（2秒インターバル）
+// ============================================================
+function startOcrLoop() {
+  clearInterval(ocrTimer);
+  ocrTimer = setInterval(doOcrTick, 2000);
+}
+
+function doOcrTick() {
+  if (ocrRunning || !cameraActive || currentMode !== 'ocr') return;
+  ocrRunning = true;
+
+  var guide = document.getElementById('ocrGuide');
+  guide.classList.add('scanning');
+
+  var b64 = captureOcr();
+  if (!b64) { ocrRunning = false; guide.classList.remove('scanning'); return; }
+
+  showToast('🔍 OCR解析中…', 'info');
+
+  callGAS('ocrSearch', { image: b64 })
+    .then(function(data){
+      guide.classList.remove('scanning');
+
+      if (data.part) {
+        // 図番検出 → カメラ停止してマスタ検索結果を反映
+        stopCamera();
+        setOcrResult(data.part);
+        applyLookupResult({
+          success:  true,
+          zuno:     data.part,
+          hinmei:   data.name  || '',
+          size:     data.size  || '',
+          inMaster: data.inMaster
+        });
+
+      } else if (data.rawText && data.rawText.trim()) {
+        // テキストは取れたが図番として確定できない場合 → 手修正へ
+        var rv = data.rawText.replace(/\n/g, ' ').trim();
+        showToast('⚠️ 図番を確認してください', 'info');
+        setOcrResult(rv.substring(0, 30));
+        document.getElementById('ocrPartInput').className = 'editing';
+        document.getElementById('ocrPartHint').textContent = '図番部分を残して修正 → 外をタップで確定';
+        stopCamera();
+        document.getElementById('registerBtn').disabled = false;
+
+      } else {
+        showToast('📷 図番が読み取れません。明るい場所で枠に合わせてください', 'info');
+      }
+    })
+    .catch(function(e){ showToast('❌ 通信エラー: ' + e.message, 'error'); })
+    .finally(function(){ ocrRunning = false; });
+}
+
+// ============================================================
+//  カメラ映像 → OCR送信用base64切り出し（ガイド枠比率）
+// ============================================================
+function captureOcr() {
+  var video = document.getElementById('cameraVideo');
+  var vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) return null;
+
+  // ① video全体をCanvasに描画
+  var full = document.createElement('canvas');
+  full.width = vw; full.height = vh;
+  full.getContext('2d').drawImage(video, 0, 0, vw, vh);
+
+  // ② ガイド枠の比率でクロップ
+  var vrect = document.getElementById('cameraVideo').getBoundingClientRect();
+  var gr    = document.getElementById('ocrGuide').getBoundingClientRect();
+
+  var ratioX = (gr.left - vrect.left) / vrect.width;
+  var ratioY = (gr.top  - vrect.top)  / vrect.height;
+  var ratioW = gr.width  / vrect.width;
+  var ratioH = gr.height / vrect.height;
+
+  // object-fit:cover のスケール逆算
+  var dispAspect  = vrect.width / vrect.height;
+  var videoAspect = vw / vh;
+  var coverScale, coverOffX, coverOffY;
+  if (videoAspect > dispAspect) {
+    coverScale = vrect.height / vh;
+    coverOffX  = (vw * coverScale - vrect.width) / 2;
+    coverOffY  = 0;
+  } else {
+    coverScale = vrect.width / vw;
+    coverOffX  = 0;
+    coverOffY  = (vh * coverScale - vrect.height) / 2;
+  }
+
+  var sx = Math.round((ratioX * vrect.width  + coverOffX) / coverScale);
+  var sy = Math.round((ratioY * vrect.height + coverOffY) / coverScale);
+  var sw = Math.round(ratioW * vrect.width  / coverScale);
+  var sh = Math.round(ratioH * vrect.height / coverScale);
+  sx = Math.max(0, Math.min(vw - 1, sx));
+  sy = Math.max(0, Math.min(vh - 1, sy));
+  sw = Math.max(1, Math.min(vw - sx, sw));
+  sh = Math.max(1, Math.min(vh - sy, sh));
+
+  var crop = document.createElement('canvas');
+  crop.width = sw; crop.height = sh;
+  crop.getContext('2d').drawImage(full, sx, sy, sw, sh, 0, 0, sw, sh);
+
+  // ③ 長辺1000px上限リサイズ
+  var MAX = 1000, out = crop;
+  if (crop.width > MAX || crop.height > MAX) {
+    var r = Math.min(MAX / crop.width, MAX / crop.height);
+    out = document.createElement('canvas');
+    out.width  = Math.round(crop.width  * r);
+    out.height = Math.round(crop.height * r);
+    out.getContext('2d').drawImage(crop, 0, 0, out.width, out.height);
+  }
+
+  // ④ デバッグプレビュー
+  var dbgWrap = document.getElementById('ocrDebugWrap');
+  var dbgCvs  = document.getElementById('ocrDebugCanvas');
+  dbgWrap.style.display = 'block';
+  dbgCvs.width = out.width; dbgCvs.height = out.height;
+  dbgCvs.getContext('2d').drawImage(out, 0, 0);
+
+  return out.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
+}
+
+// ============================================================
+//  OCR結果を図番入力欄にセット
+// ============================================================
+function setOcrResult(code) {
+  var inp = document.getElementById('ocrPartInput');
+  inp.value = code.toUpperCase();
+  inp.removeAttribute('readonly');
+  inp.className = '';
+  document.getElementById('ocrPartHint').textContent = '修正が必要な場合は直接編集してください';
+  document.getElementById('ocrResultWrap').classList.add('visible');
+}
+
+// OCR図番手修正
+function onOcrPartEdit() {
+  var inp = document.getElementById('ocrPartInput');
+  inp.className = 'editing';
+  inp.value = inp.value.trim().toUpperCase();
+  document.getElementById('ocrPartHint').textContent = '✎ 編集中 — 外をタップで確定・再検索';
+}
+
+function onOcrPartBlur() {
+  var inp  = document.getElementById('ocrPartInput');
+  var code = inp.value.trim();
+  if (!code || code === '----' || !inp.classList.contains('editing')) return;
+  inp.className = '';
+  code = code.toUpperCase();
+  inp.value = code;
+  document.getElementById('ocrPartHint').textContent = '手修正確定 — 数量を入力して登録してください';
+  showLoading(true, 'マスタ検索中…');
+  callGAS('lookup', { barcode: code })
+    .then(function(d){ showLoading(false); applyLookupResult(d); })
+    .catch(function(e){ showLoading(false); showToast('❌ 検索エラー: ' + e.message, 'error'); });
+}
+
+// ============================================================
+//  QR文字列パース  形式: 図番[,品名[,サイズ]]
+// ============================================================
+function parseQR(raw) {
+  var parts = raw.split(',').map(function(s){ return s.trim(); });
+  return { zuno: parts[0] || '', hinmei: parts[1] || '', size: parts[2] || '' };
+}
+
+// ============================================================
+//  QRバーコード処理
+// ============================================================
+function processBarcode(raw) {
+  var qr = parseQR(raw);
+  if (!qr.zuno) {
+    showToast('❌ 図番が読み取れませんでした', 'error');
+    isScanning = false;
+    return;
+  }
+  showLoading(true, 'マスタ検索中…');
+  callGAS('lookup', { barcode: qr.zuno })
+    .then(function(result){
+      showLoading(false);
+      isScanning = false;
+      if (result.success) {
+        if (qr.hinmei) result.hinmei = qr.hinmei;
+        if (qr.size)   result.size   = qr.size;
+        applyLookupResult(result);
+        updateRegisterBtn();
+      } else {
+        showToast('❌ ' + result.message, 'error');
+      }
+    })
+    .catch(function(){
+      showLoading(false); isScanning = false;
+      showToast('❌ 通信エラー。GAS URLを確認してください', 'error');
+    });
+}
+
+// ============================================================
+//  USBスキャナ設定
+// ============================================================
+function setupUsbInput() {
+  var el = document.getElementById('barcodeInput');
+  function normalize(str){
+    return str
+      .replace(/[\uFF01-\uFF5E]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })
+      .replace(/\u3000/g, ' ');
+  }
+  el.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (isScanning) return;
+    var val = normalize(el.value).trim();
+    if (!val) return;
+    isScanning = true;
+    el.value = '';
+    processBarcode(val);
+    setTimeout(function(){ isScanning = false; }, 1000);
+  });
+}
+
+function focusBarcodeInput() {
+  var el = document.getElementById('barcodeInput');
+  el.blur();
+  setTimeout(function(){ el.focus(); }, 50);
+}
+
+// ============================================================
+//  マスタ検索結果をUIに反映（QR・OCR共用）
+// ============================================================
+function applyLookupResult(result) {
+  var zuno    = result.zuno    || result.part  || '';
+  var hinmei  = result.hinmei || result.name  || '';
+  var size    = result.size   || '';
+  var inMaster = (result.inMaster !== undefined)
+    ? result.inMaster
+    : (result.success && hinmei && hinmei !== '（マスタ未登録）');
+
+  currentZuno   = zuno.toUpperCase();
+  currentHinmei = hinmei;
+  currentSize   = size;
+
+  function setField(id, val, cls) {
+    var el = document.getElementById(id);
+    el.textContent = val || '―';
+    el.className = 'field-value' + (cls ? ' ' + cls : '');
+  }
+
+  setField('zunoDisplay',   currentZuno,   'filled');
+  setField('hinmeiDisplay', hinmei || '（マスタ未登録）', inMaster ? 'filled' : 'warn');
+  setField('sizeDisplay',   size   || '―',               inMaster ? 'filled' : 'warn');
+
+  if (currentMode === 'ocr') {
+    var inp = document.getElementById('ocrPartInput');
+    inp.value = currentZuno;
+    inp.className = inMaster ? '' : 'notfound';
+    document.getElementById('ocrPartHint').textContent = inMaster
+      ? '✅ マスタ確認済 — 数量を入力してください'
+      : '⚠️ マスタ未登録 — 数量入力後に手動登録できます';
+  }
+
+  showToast(inMaster ? '✅ 読取完了！数量を入力してください' : '⚠️ マスタ未登録の図番です', inMaster ? 'success' : 'updated');
+
+  setTimeout(function(){
+    document.getElementById('quantityInput').focus();
+    document.getElementById('quantityInput').select();
+  }, 50);
+
+  updateRegisterBtn();
+}
+
+// ============================================================
+//  登録ボタン有効判定
+// ============================================================
+function updateRegisterBtn() {
+  var zuno  = document.getElementById('zunoDisplay').textContent.trim();
+  var qty   = document.getElementById('quantityInput').value.trim();
+  var dept  = document.getElementById('departmentSelect').value;
+  var pers  = document.getElementById('personnelSelect').value;
+  var itype = document.getElementById('inventoryTypeSelect').value;
+  document.getElementById('registerBtn').disabled =
+    !(zuno && zuno !== '―' && qty !== '' && Number(qty) >= 0 && dept && pers && itype);
+}
+
+['quantityInput','departmentSelect','personnelSelect','inventoryTypeSelect'].forEach(function(id){
+  window.addEventListener('load', function(){
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', updateRegisterBtn);
+      el.addEventListener('input',  updateRegisterBtn);
+    }
+  });
+});
+
+// ============================================================
+//  登録処理
+// ============================================================
+function registerData() {
+  var now = new Date();
+  var pad = function(n){ return String(n).padStart(2,'0'); };
+  var data = {
+    date:          now.getFullYear() + '/' + pad(now.getMonth()+1) + '/' + pad(now.getDate()),
+    time:          pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()),
+    zuno:          document.getElementById('zunoDisplay').textContent.trim(),
+    hinmei:        currentHinmei,
+    size:          currentSize,
+    quantity:      document.getElementById('quantityInput').value.trim(),
+    department:    document.getElementById('departmentSelect').value,
+    personnel:     document.getElementById('personnelSelect').value,
+    inventoryType: document.getElementById('inventoryTypeSelect').value
+  };
+
+  showLoading(true, '登録中…');
+
+  callGAS('register', data)
+    .then(function(result){
+      showLoading(false);
+      if (result.success) {
+        openModal(
+          '登録しました！',
+          (result.updated ? '（既存データを上書きしました）' : '（新規登録）')
+        );
+      } else {
+        showToast('❌ ' + result.message, 'error');
+      }
+    })
+    .catch(function(){
+      showLoading(false);
+      showToast('❌ 通信エラー。GAS URLを確認してください', 'error');
+    });
+}
+
+// ============================================================
+//  モーダル
+// ============================================================
+function openModal(msg, sub) {
+  document.getElementById('modalMsg').textContent = msg;
+  document.getElementById('modalSub').textContent = sub || '';
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  resetAll();
+}
+
+// ============================================================
+//  リセット（再スキャン）
+// ============================================================
+function resetAll() {
+  if (cameraActive) stopCamera();
+  currentZuno = null; currentHinmei = ''; currentSize = '';
+
+  // OCR入力欄リセット
+  var ocrInp = document.getElementById('ocrPartInput');
+  ocrInp.value = '----';
+  ocrInp.className = '';
+  ocrInp.setAttribute('readonly', true);
+  document.getElementById('ocrPartHint').textContent = 'OCR読み取り後、手修正も可能です';
+  document.getElementById('ocrDebugWrap').style.display = 'none';
+
+  // 登録情報リセット
+  ['zunoDisplay','hinmeiDisplay','sizeDisplay'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.textContent = '―';
+    el.className = 'field-value';
+  });
+  document.getElementById('quantityInput').value      = '';
+  document.getElementById('departmentSelect').value   = '';
+  document.getElementById('personnelSelect').value    = '';
+  document.getElementById('inventoryTypeSelect').value = '';
+  document.getElementById('registerBtn').disabled = true;
+  isScanning = false;
+
+  if (currentMode === 'usb') focusBarcodeInput();
+}
+
+// ============================================================
+//  ローディング
+// ============================================================
+function showLoading(show, msg) {
+  document.getElementById('loading').classList.toggle('show', show);
+  if (msg) document.getElementById('loadingText').textContent = msg;
+}
+
+// ============================================================
+//  トースト通知
+// ============================================================
+function showToast(msg, type) {
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'show ' + (type || 'success');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ toast.className = (type || 'success'); }, 3000);
+}
+</script>
+</body>
+</html>
