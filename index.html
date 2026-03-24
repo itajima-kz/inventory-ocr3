@@ -127,7 +127,7 @@
       border-radius: 3px;
     }
 
-    /* ===== 部署・担当者カード（上部固定） ===== */
+    /* ===== 場所・担当者カード（上部固定） ===== */
     .operator-card {
       background: linear-gradient(145deg, #eef3fc, #dde8fa);
       border: 2px solid var(--blue-mid);
@@ -768,7 +768,7 @@
       場所 ／ 担当者
       <span class="operator-lock-badge" id="lockBadge" style="display:none;">🔒 保持中</span>
     </div>
-    <button class="operator-clear-btn" onclick="clearOperator()" title="部署・担当者をクリア">クリア</button>
+    <button class="operator-clear-btn" onclick="clearOperator()" title="場所・担当者をクリア">クリア</button>
     <div class="operator-row">
       <div class="operator-field">
         <label class="field-label" for="departmentSelect">場所</label>
@@ -996,7 +996,7 @@ function callGAS(action, params) {
 }
 
 // ============================================================
-//  マスタデータ取得（部署・担当者・在庫区分）
+//  マスタデータ取得（場所・担当者・在庫区分）
 // ============================================================
 function loadMasterData() {
   callGAS('getMaster', {})
@@ -1024,7 +1024,7 @@ function fillSelect(id, items) {
 }
 
 // ============================================================
-//  ★ 部署・担当者 保持/クリア
+//  ★ 場所・担当者 保持/クリア
 // ============================================================
 var savedDept   = '';
 var savedPerson = '';
@@ -1069,7 +1069,7 @@ function clearOperator() {
   } catch(e){}
   updateLockBadge();
   updateRegisterBtn();
-  showToast('🔓 部署・担当者をクリアしました', 'updated');
+  showToast('🔓 場所・担当者をクリアしました', 'updated');
 }
 
 function updateLockBadge() {
@@ -1547,7 +1547,7 @@ function closeModal() {
 
 // ============================================================
 //  リセット（再スキャン）
-//  ★ 部署・担当者は保持したまま、図番/数量/在庫区分のみリセット
+//  ★ 場所・担当者は保持したまま、図番/数量/在庫区分のみリセット
 // ============================================================
 function resetAll() {
   if (cameraActive) stopCamera();
@@ -1571,7 +1571,7 @@ function resetAll() {
   // ダイヤルリセット
   resetDials();
 
-  // 在庫区分リセット（部署・担当者は保持）
+  // 在庫区分リセット（場所・担当者は保持）
   document.getElementById('inventoryTypeSelect').value = '';
   document.getElementById('registerBtn').disabled = true;
 
