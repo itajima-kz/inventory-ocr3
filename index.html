@@ -844,7 +844,7 @@
       <div class="field-value" id="hinmeiDisplay">―</div>
     </div>
 
-    <div style="margin-bottom:16px;">
+    <div style="display:none;">
       <span class="field-label">サイズ</span>
       <div class="field-value" id="sizeDisplay">―</div>
     </div>
@@ -1411,6 +1411,8 @@ function captureOcr() {
 //  OCR結果を図番入力欄にセット
 // ============================================================
 function setOcrResult(code) {
+  // 空白文字とハイフンを除去して詰める
+  code = code.replace(/[\s\-]/g, '');
   var inp = document.getElementById('ocrPartInput');
   inp.value = code.toUpperCase();
   inp.removeAttribute('readonly');
@@ -1422,13 +1424,14 @@ function setOcrResult(code) {
 function onOcrPartEdit() {
   var inp = document.getElementById('ocrPartInput');
   inp.className = 'editing';
-  inp.value = inp.value.trim().toUpperCase();
+  // 空白・ハイフンを除去して詰める
+  inp.value = inp.value.replace(/[\s\-]/g, '').trim().toUpperCase();
   document.getElementById('ocrPartHint').textContent = '✎ 編集中 — 外をタップで確定・再検索';
 }
 
 function onOcrPartBlur() {
   var inp  = document.getElementById('ocrPartInput');
-  var code = inp.value.trim();
+  var code = inp.value.replace(/[\s\-]/g, '').trim();
   if (!code || code === '----' || !inp.classList.contains('editing')) return;
   inp.className = '';
   code = code.toUpperCase();
