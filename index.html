@@ -369,6 +369,11 @@
     }
     #btnCameraStop:active { transform: scale(0.96); }
 
+    .btn-master-search {
+      background: linear-gradient(135deg, #0f9e6e 0%, #076e49 100%);
+      box-shadow: 0 4px 16px rgba(7,110,73,0.40);
+    }
+
     .scan-hint {
       text-align: center;
       font-size: 14px;
@@ -828,6 +833,11 @@
         oninput="onOcrPartEdit()" onblur="onOcrPartBlur()">
       <div class="ocr-part-hint" id="ocrPartHint">OCR読み取り後、手修正も可能です</div>
     </div>
+
+    <!-- マスタ検索ボタン -->
+    <button id="btnMasterSearch" class="btn-cam-start btn-master-search" onclick="doMasterSearch()" style="display:none;">
+      🔎 マスタ検索
+    </button>
   </div>
 
   <!-- 登録情報エリア -->
@@ -1318,20 +1328,14 @@ function doOcrTick() {
       if (data.part) {
         stopCamera();
         setOcrResult(data.part);
-        applyLookupResult({
-          success:  true,
-          zuno:     data.part,
-          hinmei:   data.name  || '',
-          size:     data.size  || '',
-          inMaster: data.inMaster
-        });
+        showToast('✅ 図番を読み取りました。確認後にマスタ検索してください', 'success');
 
       } else if (data.rawText && data.rawText.trim()) {
         var rv = data.rawText.replace(/\n/g, ' ').trim();
-        showToast('⚠️ 図番を確認してください', 'info');
-        setOcrResult(rv.substring(0, 30));
+        showToast('⚠️ 図番を確認・修正してマスタ検索してください', 'info');
+        setOcrResult(rv.replace(/[\s\-]/g, '').substring(0, 30));
         document.getElementById('ocrPartInput').className = 'editing';
-        document.getElementById('ocrPartHint').textContent = '図番部分を残して修正 → 外をタップで確定';
+        document.getElementById('ocrPartHint').textContent = '図番部分を残して修正し、マスタ検索してください';
         stopCamera();
         updateRegisterBtn();
 
@@ -1417,8 +1421,10 @@ function setOcrResult(code) {
   inp.value = code.toUpperCase();
   inp.removeAttribute('readonly');
   inp.className = '';
-  document.getElementById('ocrPartHint').textContent = '修正が必要な場合は直接編集してください';
+  document.getElementById('ocrPartHint').textContent = '修正が必要な場合は直接編集し、マスタ検索してください';
   document.getElementById('ocrResultWrap').classList.add('visible');
+  // マスタ検索ボタンを表示
+  document.getElementById('btnMasterSearch').style.display = 'flex';
 }
 
 function onOcrPartEdit() {
@@ -1426,17 +1432,30 @@ function onOcrPartEdit() {
   inp.className = 'editing';
   // 空白・ハイフンを除去して詰める
   inp.value = inp.value.replace(/[\s\-]/g, '').trim().toUpperCase();
-  document.getElementById('ocrPartHint').textContent = '✎ 編集中 — 外をタップで確定・再検索';
+  document.getElementById('ocrPartHint').textContent = '✎ 編集中 — 修正後にマスタ検索ボタンを押してください';
 }
 
 function onOcrPartBlur() {
   var inp  = document.getElementById('ocrPartInput');
-  var code = inp.value.replace(/[\s\-]/g, '').trim();
-  if (!code || code === '----' || !inp.classList.contains('editing')) return;
+  var code = inp.value.replace(/[\s\-]/g, '').trim().toUpperCase();
+  if (!code || code === '----') return;
   inp.className = '';
-  code = code.toUpperCase();
   inp.value = code;
-  document.getElementById('ocrPartHint').textContent = '手修正確定 — 数量を入力して登録してください';
+  document.getElementById('ocrPartHint').textContent = '修正完了 — マスタ検索ボタンを押してください';
+}
+
+// ============================================================
+//  手動マスタ検索（マスタ検索ボタン押下）
+// ============================================================
+function doMasterSearch() {
+  var inp  = document.getElementById('ocrPartInput');
+  var code = inp.value.replace(/[\s\-]/g, '').trim().toUpperCase();
+  if (!code || code === '----') {
+    showToast('⚠️ 図番を入力してください', 'error');
+    return;
+  }
+  inp.value = code;
+  inp.className = '';
   showLoading(true, 'マスタ検索中…');
   callGAS('lookup', { barcode: code })
     .then(function(d){ showLoading(false); applyLookupResult(d); })
@@ -1577,6 +1596,8 @@ function resetAll() {
   // 在庫区分リセット（場所・担当者は保持）
   document.getElementById('inventoryTypeSelect').value = '';
   document.getElementById('registerBtn').disabled = true;
+  // マスタ検索ボタンを非表示に戻す
+  document.getElementById('btnMasterSearch').style.display = 'none';
 
 }
 
