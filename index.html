@@ -188,8 +188,6 @@
       padding: 18px 18px 16px;
     }
 
-
-
     /* ===== スキャンエリア（横長：縦を1/2に） ===== */
     .scan-square {
       position: relative;
@@ -287,22 +285,17 @@
       z-index: 1;
     }
 
+    /* ===== scan-label は枠の外側に表示 ===== */
     .scan-label {
       font-size: 15px;
       font-weight: 700;
       color: var(--text-mid);
       text-align: center;
-      padding: 0 24px;
-      position: relative;
-      z-index: 6;
-    }
-
-    .scan-square.camera-on .scan-label {
-      color: #fff;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.7);
-      background: rgba(0,0,0,0.40);
-      border-radius: 8px;
-      padding: 6px 16px;
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: var(--surface2);
+      border: 1.5px solid var(--blue-lt);
+      border-radius: var(--radius-xs);
     }
 
     #ocrDebugWrap {
@@ -498,7 +491,6 @@
       cursor: ns-resize;
     }
 
-    /* 上下グラデートマスク */
     .dial-wheel::before,
     .dial-wheel::after {
       content: '';
@@ -517,7 +509,6 @@
       background: linear-gradient(0deg, rgba(10,26,58,0.95) 0%, transparent 100%);
     }
 
-    /* 中央選択ハイライト枠 */
     .dial-highlight {
       position: absolute;
       top: 50%;
@@ -574,7 +565,6 @@
       margin-left: 6px;
     }
 
-    /* 区切り文字 */
     .dial-sep {
       font-size: 28px;
       font-weight: 800;
@@ -582,7 +572,6 @@
       padding-bottom: 16px;
     }
 
-    /* セレクト */
     select {
       width: 100%;
       font-family: var(--font);
@@ -794,7 +783,7 @@
   <div class="card scan-card" id="scanCard">
     <div class="card-label">OCR 図番読取</div>
 
-    <!-- スキャンエリア（正方形） -->
+    <!-- スキャンエリア（横長） -->
     <div class="scan-square" id="scanSquare">
       <div class="qr-corner tl"></div>
       <div class="qr-corner tr"></div>
@@ -804,8 +793,9 @@
       <div id="ocrGuide"></div>
       <div id="scanFlash"></div>
       <div class="scan-icon" id="scanIcon">🔍</div>
-      <div class="scan-label" id="scanLabel">🔍 下のボタンでOCR開始</div>
     </div>
+    <!-- ★ ガイドメッセージをscan-squareの外側に移動 -->
+    <div class="scan-label" id="scanLabel">🔍 下のボタンでOCR開始</div>
 
     <!-- カメラ起動ボタン -->
     <button id="btnCameraStart" class="btn-cam-start ocr-btn" onclick="startCamera()">
@@ -864,7 +854,6 @@
       <span class="field-label">数量（ダイヤルで入力）</span>
 
       <div class="dial-container">
-        <!-- 千の位 -->
         <div class="dial-group">
           <div class="dial-unit-label">千</div>
           <div class="dial-wheel" id="dial-1000" data-place="1000">
@@ -873,7 +862,6 @@
           </div>
         </div>
         <div class="dial-sep">·</div>
-        <!-- 百の位 -->
         <div class="dial-group">
           <div class="dial-unit-label">百</div>
           <div class="dial-wheel" id="dial-100" data-place="100">
@@ -882,7 +870,6 @@
           </div>
         </div>
         <div class="dial-sep">·</div>
-        <!-- 十の位 -->
         <div class="dial-group">
           <div class="dial-unit-label">十</div>
           <div class="dial-wheel" id="dial-10" data-place="10">
@@ -891,7 +878,6 @@
           </div>
         </div>
         <div class="dial-sep">·</div>
-        <!-- 一の位 -->
         <div class="dial-group">
           <div class="dial-unit-label">一</div>
           <div class="dial-wheel" id="dial-1" data-place="1">
@@ -901,7 +887,6 @@
         </div>
       </div>
 
-      <!-- 合計数量表示 -->
       <div class="dial-total" id="dialTotal">
         0 <span>個</span>
       </div>
@@ -934,15 +919,8 @@
 <div id="toast"></div>
 
 <script>
-// ============================================================
-//  ★★★ 設定エリア：GASデプロイURLを貼り付けてください ★★★
-// ============================================================
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbz1vQk8iWhJA9a81FsMzTRDPBbnZ1OaVVztrPJRIDhCeGmLo_bc6RXsZo1r3HRAVkG0-A/exec';
-// ============================================================
 
-// ============================================================
-//  状態変数
-// ============================================================
 var cameraStream  = null;
 var cameraActive  = false;
 var ocrTimer      = null;
@@ -951,12 +929,8 @@ var currentZuno   = null;
 var currentHinmei = '';
 var currentSize   = '';
 
-// ダイヤル状態 { place: currentValue }
 var dialValues = { 1000: 0, 100: 0, 10: 0, 1: 0 };
 
-// ============================================================
-//  初期化
-// ============================================================
 window.addEventListener('load', function () {
   updateDateTime();
   setInterval(updateDateTime, 1000);
@@ -965,9 +939,6 @@ window.addEventListener('load', function () {
   restoreOperator();
 });
 
-// ============================================================
-//  日時表示
-// ============================================================
 function updateDateTime() {
   var now = new Date();
   var pad = function(n){ return String(n).padStart(2,'0'); };
@@ -976,9 +947,6 @@ function updateDateTime() {
     '  ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
 }
 
-// ============================================================
-//  GAS API 呼び出し共通
-// ============================================================
 function callGAS(action, params) {
   return new Promise(function(resolve, reject) {
     var isGet = (action === 'getMaster' || action === 'lookup');
@@ -1005,16 +973,12 @@ function callGAS(action, params) {
   });
 }
 
-// ============================================================
-//  マスタデータ取得（場所・担当者・在庫区分）
-// ============================================================
 function loadMasterData() {
   callGAS('getMaster', {})
     .then(function(data){
       fillSelect('departmentSelect',    data.departments    || []);
       fillSelect('personnelSelect',     data.personnel      || []);
       fillSelect('inventoryTypeSelect', data.inventoryTypes || []);
-      // マスタ取得後に保存値を復元
       restoreOperator();
     })
     .catch(function(){
@@ -1024,7 +988,6 @@ function loadMasterData() {
 
 function fillSelect(id, items) {
   var sel = document.getElementById(id);
-  // 既存オプション（「選択」以外）を削除してから追加
   while (sel.options.length > 1) sel.remove(1);
   items.forEach(function(d){
     var opt = document.createElement('option');
@@ -1033,16 +996,12 @@ function fillSelect(id, items) {
   });
 }
 
-// ============================================================
-//  ★ 場所・担当者 保持/クリア
-// ============================================================
 var savedDept   = '';
 var savedPerson = '';
 
 function onOperatorChange() {
   savedDept   = document.getElementById('departmentSelect').value;
   savedPerson = document.getElementById('personnelSelect').value;
-  // sessionStorage に保存（タブを閉じるまで保持）
   try {
     sessionStorage.setItem('inv_dept',   savedDept);
     sessionStorage.setItem('inv_person', savedPerson);
@@ -1089,11 +1048,8 @@ function updateLockBadge() {
   badge.style.display = (dept || person) ? '' : 'none';
 }
 
-// ============================================================
-//  ★ ダイヤル実装
-// ============================================================
-var ITEM_H   = 40;   // 1アイテムの高さ (px)
-var PAD      = 2;    // 上下に追加するダミーアイテム数（スクロール余白）
+var ITEM_H = 40;
+var PAD    = 2;
 
 function initDials() {
   [1000, 100, 10, 1].forEach(function(place) {
@@ -1106,54 +1062,40 @@ function initDials() {
 function buildDial(place) {
   var inner = document.getElementById('dial-inner-' + place);
   inner.innerHTML = '';
-
-  // 上部ダミー（PAD個）
   for (var i = 0; i < PAD; i++) {
     var d = document.createElement('div');
     d.className = 'dial-item';
     inner.appendChild(d);
   }
-
-  // 0-9
   for (var v = 0; v <= 9; v++) {
     var item = document.createElement('div');
     item.className = 'dial-item';
     item.textContent = v;
     inner.appendChild(item);
   }
-
-  // 下部ダミー（PAD個）
   for (var j = 0; j < PAD; j++) {
     var d2 = document.createElement('div');
     d2.className = 'dial-item';
     inner.appendChild(d2);
   }
-
   setDialValue(place, 0, false);
 }
 
 function setDialValue(place, val, animate) {
   val = ((val % 10) + 10) % 10;
   dialValues[place] = val;
-
   var inner = document.getElementById('dial-inner-' + place);
-  // 中央揃え offset: ホイール高140px → 中心70px → アイテム中心20px
-  // 選択アイテムindex = PAD + val
   var offset = -((PAD + val) * ITEM_H) + (140 / 2 - ITEM_H / 2);
-
   if (!animate) {
     inner.style.transition = 'none';
   } else {
     inner.style.transition = 'transform 0.18s ease-out';
   }
   inner.style.transform = 'translateY(' + offset + 'px)';
-
-  // selected クラス更新
   var items = inner.querySelectorAll('.dial-item');
   items.forEach(function(item, idx) {
     item.classList.toggle('selected', idx === PAD + val);
   });
-
   renderDialTotal();
 }
 
@@ -1163,7 +1105,6 @@ function bindDialEvents(place) {
   var startVal = 0;
   var dragging = false;
 
-  // タッチ
   wheel.addEventListener('touchstart', function(e) {
     e.preventDefault();
     startY   = e.touches[0].clientY;
@@ -1185,7 +1126,6 @@ function bindDialEvents(place) {
     updateRegisterBtn();
   });
 
-  // マウス（デスクトップ）
   wheel.addEventListener('mousedown', function(e) {
     e.preventDefault();
     startY   = e.clientY;
@@ -1205,7 +1145,6 @@ function bindDialEvents(place) {
     dragging = false;
   });
 
-  // マウスホイール
   wheel.addEventListener('wheel', function(e) {
     e.preventDefault();
     var delta = e.deltaY > 0 ? 1 : -1;
@@ -1234,17 +1173,12 @@ function resetDials() {
   renderDialTotal();
 }
 
-// ============================================================
-//  カメラ起動（OCR専用）
-// ============================================================
 function startCamera() {
   if (cameraActive) return;
-
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     showToast('❌ このブラウザはカメラに対応していません', 'error');
     return;
   }
-
   navigator.mediaDevices.getUserMedia({
     video: {
       facingMode: { ideal: 'environment' },
@@ -1255,7 +1189,6 @@ function startCamera() {
   .then(function(stream){
     cameraStream = stream;
     cameraActive = true;
-
     var video  = document.getElementById('cameraVideo');
     var square = document.getElementById('scanSquare');
     video.srcObject = stream;
@@ -1263,7 +1196,6 @@ function startCamera() {
     document.getElementById('btnCameraStart').style.display = 'none';
     document.getElementById('btnCameraStop').style.display  = 'flex';
     square.className = 'scan-square camera-on mode-ocr';
-
     document.getElementById('ocrGuide').style.display = 'block';
     document.getElementById('scanLabel').textContent  = '🔍 ガイド枠に図番を合わせてください';
     document.getElementById('scanHint').textContent   = '🔍 2秒ごとに自動OCR解析中…';
@@ -1278,9 +1210,6 @@ function startCamera() {
   });
 }
 
-// ============================================================
-//  カメラ停止
-// ============================================================
 function stopCamera() {
   clearInterval(ocrTimer); ocrTimer = null;
   if (cameraStream){
@@ -1290,20 +1219,15 @@ function stopCamera() {
   var video = document.getElementById('cameraVideo');
   video.srcObject = null;
   video.style.display = 'none';
-
   document.getElementById('ocrGuide').style.display   = 'none';
   document.getElementById('btnCameraStart').style.display = '';
   document.getElementById('btnCameraStop').style.display  = 'none';
   document.getElementById('scanSquare').className = 'scan-square';
   cameraActive = false; ocrRunning = false;
-
   document.getElementById('scanLabel').textContent = '🔍 下のボタンでOCR開始';
   document.getElementById('scanHint').textContent  = '🔍 ガイド枠に図番を合わせてください';
 }
 
-// ============================================================
-//  OCR解析ループ（2秒インターバル）
-// ============================================================
 function startOcrLoop() {
   clearInterval(ocrTimer);
   ocrTimer = setInterval(doOcrTick, 2000);
@@ -1312,24 +1236,18 @@ function startOcrLoop() {
 function doOcrTick() {
   if (ocrRunning || !cameraActive) return;
   ocrRunning = true;
-
   var guide = document.getElementById('ocrGuide');
   guide.classList.add('scanning');
-
   var b64 = captureOcr();
   if (!b64) { ocrRunning = false; guide.classList.remove('scanning'); return; }
-
   showToast('🔍 OCR解析中…', 'info');
-
   callGAS('ocrSearch', { image: b64 })
     .then(function(data){
       guide.classList.remove('scanning');
-
       if (data.part) {
         stopCamera();
         setOcrResult(data.part);
         showToast('✅ 図番を読み取りました。確認後にマスタ検索してください', 'success');
-
       } else if (data.rawText && data.rawText.trim()) {
         var rv = data.rawText.replace(/\n/g, ' ').trim();
         showToast('⚠️ 図番を確認・修正してマスタ検索してください', 'info');
@@ -1338,7 +1256,6 @@ function doOcrTick() {
         document.getElementById('ocrPartHint').textContent = '図番部分を残して修正し、マスタ検索してください';
         stopCamera();
         updateRegisterBtn();
-
       } else {
         showToast('📷 図番が読み取れません。明るい場所で枠に合わせてください', 'info');
       }
@@ -1347,26 +1264,19 @@ function doOcrTick() {
     .finally(function(){ ocrRunning = false; });
 }
 
-// ============================================================
-//  カメラ映像 → OCR送信用base64切り出し
-// ============================================================
 function captureOcr() {
   var video = document.getElementById('cameraVideo');
   var vw = video.videoWidth, vh = video.videoHeight;
   if (!vw || !vh) return null;
-
   var full = document.createElement('canvas');
   full.width = vw; full.height = vh;
   full.getContext('2d').drawImage(video, 0, 0, vw, vh);
-
   var vrect = document.getElementById('cameraVideo').getBoundingClientRect();
   var gr    = document.getElementById('ocrGuide').getBoundingClientRect();
-
   var ratioX = (gr.left - vrect.left) / vrect.width;
   var ratioY = (gr.top  - vrect.top)  / vrect.height;
   var ratioW = gr.width  / vrect.width;
   var ratioH = gr.height / vrect.height;
-
   var dispAspect  = vrect.width / vrect.height;
   var videoAspect = vw / vh;
   var coverScale, coverOffX, coverOffY;
@@ -1379,7 +1289,6 @@ function captureOcr() {
     coverOffX  = 0;
     coverOffY  = (vh * coverScale - vrect.height) / 2;
   }
-
   var sx = Math.round((ratioX * vrect.width  + coverOffX) / coverScale);
   var sy = Math.round((ratioY * vrect.height + coverOffY) / coverScale);
   var sw = Math.round(ratioW * vrect.width  / coverScale);
@@ -1388,11 +1297,9 @@ function captureOcr() {
   sy = Math.max(0, Math.min(vh - 1, sy));
   sw = Math.max(1, Math.min(vw - sx, sw));
   sh = Math.max(1, Math.min(vh - sy, sh));
-
   var crop = document.createElement('canvas');
   crop.width = sw; crop.height = sh;
   crop.getContext('2d').drawImage(full, sx, sy, sw, sh, 0, 0, sw, sh);
-
   var MAX = 1000, out = crop;
   if (crop.width > MAX || crop.height > MAX) {
     var r = Math.min(MAX / crop.width, MAX / crop.height);
@@ -1401,21 +1308,15 @@ function captureOcr() {
     out.height = Math.round(crop.height * r);
     out.getContext('2d').drawImage(crop, 0, 0, out.width, out.height);
   }
-
   var dbgWrap = document.getElementById('ocrDebugWrap');
   var dbgCvs  = document.getElementById('ocrDebugCanvas');
   dbgWrap.style.display = 'block';
   dbgCvs.width = out.width; dbgCvs.height = out.height;
   dbgCvs.getContext('2d').drawImage(out, 0, 0);
-
   return out.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
 }
 
-// ============================================================
-//  OCR結果を図番入力欄にセット
-// ============================================================
 function setOcrResult(code) {
-  // 空白文字とハイフンを除去して詰める
   code = code.replace(/[\s\-]/g, '');
   var inp = document.getElementById('ocrPartInput');
   inp.value = code.toUpperCase();
@@ -1423,14 +1324,12 @@ function setOcrResult(code) {
   inp.className = '';
   document.getElementById('ocrPartHint').textContent = '修正が必要な場合は直接編集し、マスタ検索してください';
   document.getElementById('ocrResultWrap').classList.add('visible');
-  // マスタ検索ボタンを表示
   document.getElementById('btnMasterSearch').style.display = 'flex';
 }
 
 function onOcrPartEdit() {
   var inp = document.getElementById('ocrPartInput');
   inp.className = 'editing';
-  // 空白・ハイフンを除去して詰める
   inp.value = inp.value.replace(/[\s\-]/g, '').trim().toUpperCase();
   document.getElementById('ocrPartHint').textContent = '✎ 編集中 — 修正後にマスタ検索ボタンを押してください';
 }
@@ -1444,9 +1343,6 @@ function onOcrPartBlur() {
   document.getElementById('ocrPartHint').textContent = '修正完了 — マスタ検索ボタンを押してください';
 }
 
-// ============================================================
-//  手動マスタ検索（マスタ検索ボタン押下）
-// ============================================================
 function doMasterSearch() {
   var inp  = document.getElementById('ocrPartInput');
   var code = inp.value.replace(/[\s\-]/g, '').trim().toUpperCase();
@@ -1462,9 +1358,6 @@ function doMasterSearch() {
     .catch(function(e){ showLoading(false); showToast('❌ 検索エラー: ' + e.message, 'error'); });
 }
 
-// ============================================================
-//  マスタ検索結果をUIに反映
-// ============================================================
 function applyLookupResult(result) {
   var zuno    = result.zuno    || result.part  || '';
   var hinmei  = result.hinmei || result.name  || '';
@@ -1500,9 +1393,6 @@ function applyLookupResult(result) {
   updateRegisterBtn();
 }
 
-// ============================================================
-//  登録ボタン有効判定
-// ============================================================
 function updateRegisterBtn() {
   var zuno   = document.getElementById('zunoDisplay').textContent.trim();
   var qty    = getDialTotal();
@@ -1513,14 +1403,10 @@ function updateRegisterBtn() {
     !(zuno && zuno !== '―' && qty >= 0 && dept && pers && itype);
 }
 
-// ============================================================
-//  登録処理
-// ============================================================
 function registerData() {
   var now = new Date();
   var pad = function(n){ return String(n).padStart(2,'0'); };
   var qty = getDialTotal();
-
   var data = {
     date:          now.getFullYear() + '/' + pad(now.getMonth()+1) + '/' + pad(now.getDate()),
     time:          pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()),
@@ -1532,9 +1418,7 @@ function registerData() {
     personnel:     document.getElementById('personnelSelect').value,
     inventoryType: document.getElementById('inventoryTypeSelect').value
   };
-
   showLoading(true, '登録中…');
-
   callGAS('register', data)
     .then(function(result){
       showLoading(false);
@@ -1553,9 +1437,6 @@ function registerData() {
     });
 }
 
-// ============================================================
-//  モーダル
-// ============================================================
 function openModal(msg, sub) {
   document.getElementById('modalMsg').textContent = msg;
   document.getElementById('modalSub').textContent = sub || '';
@@ -1567,51 +1448,31 @@ function closeModal() {
   resetAll();
 }
 
-// ============================================================
-//  リセット（再スキャン）
-//  ★ 場所・担当者は保持したまま、図番/数量/在庫区分のみリセット
-// ============================================================
 function resetAll() {
   if (cameraActive) stopCamera();
   currentZuno = null; currentHinmei = ''; currentSize = '';
-
-  // OCR入力欄リセット
   var ocrInp = document.getElementById('ocrPartInput');
   ocrInp.value = '----';
   ocrInp.className = '';
   ocrInp.setAttribute('readonly', true);
   document.getElementById('ocrPartHint').textContent = 'OCR読み取り後、手修正も可能です';
   document.getElementById('ocrDebugWrap').style.display = 'none';
-
-  // 登録情報リセット
   ['zunoDisplay','hinmeiDisplay','sizeDisplay'].forEach(function(id){
     var el = document.getElementById(id);
     el.textContent = '―';
     el.className = 'field-value';
   });
-
-  // ダイヤルリセット
   resetDials();
-
-  // 在庫区分リセット（場所・担当者は保持）
   document.getElementById('inventoryTypeSelect').value = '';
   document.getElementById('registerBtn').disabled = true;
-  // マスタ検索ボタンを非表示に戻す
   document.getElementById('btnMasterSearch').style.display = 'none';
-
 }
 
-// ============================================================
-//  ローディング
-// ============================================================
 function showLoading(show, msg) {
   document.getElementById('loading').classList.toggle('show', show);
   if (msg) document.getElementById('loadingText').textContent = msg;
 }
 
-// ============================================================
-//  トースト通知
-// ============================================================
 function showToast(msg, type) {
   var toast = document.getElementById('toast');
   toast.textContent = msg;
