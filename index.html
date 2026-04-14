@@ -936,45 +936,86 @@ PLACES.forEach(function(p) {
 
 /* ---------- 音声 ---------- */
 var _audioCtx = null;
+var _audioUnlocked = false;
 
+// ★ iOS対応: ユーザーのジェスチャー内でサイレントバッファを再生してアンロック
 function _initAudio() {
   if (_audioCtx) return;
-  try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  try {
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // iOS は初回ユーザーインタラクション内でサイレント再生しないとロックされる
+    var silentBuf = _audioCtx.createBuffer(1, 1, 22050);
+    var silentSrc = _audioCtx.createBufferSource();
+    silentSrc.buffer = silentBuf;
+    silentSrc.connect(_audioCtx.destination);
+    silentSrc.start(0);
+    if (_audioCtx.state === 'suspended') {
+      _audioCtx.resume().then(function() { _audioUnlocked = true; });
+    } else {
+      _audioUnlocked = true;
+    }
+  } catch(e) {}
 }
 
-// 初回タッチ/クリックで AudioContext を初期化（iOS 制約対応）
+// ★ ダイヤルの最初のタッチで AudioContext を確実に初期化
+function _ensureAudio() {
+  if (!_audioCtx) { _initAudio(); return; }
+  if (_audioCtx.state === 'suspended') {
+    _audioCtx.resume().then(function() { _audioUnlocked = true; });
+  }
+}
+
 document.addEventListener('touchstart', _initAudio, { once: true, passive: true });
 document.addEventListener('mousedown',  _initAudio, { once: true, passive: true });
 
-function _playTick() {
-  if (!_audioCtx) return;
+// ★ 指定時刻にカチカチ音を再生（when=AudioContext時刻、省略時は即時）
+function _playTickAt(when) {
+  if (!_audioCtx || !_audioUnlocked) return;
   try {
-    if (_audioCtx.state === 'suspended') _audioCtx.resume();
-    var t   = _audioCtx.currentTime;
     var sr  = _audioCtx.sampleRate;
-    var len = Math.floor(sr * 0.018);  // 18ms のノイズバースト
-
+    var len = Math.floor(sr * 0.016);
     var buf  = _audioCtx.createBuffer(1, len, sr);
     var data = buf.getChannelData(0);
     for (var i = 0; i < len; i++) {
-      // 指数減衰するホワイトノイズ → メカニカルクリック音
-      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.18));
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.16));
     }
-
-    var src  = _audioCtx.createBufferSource();
+    var src = _audioCtx.createBufferSource();
     src.buffer = buf;
-
-    // ハイパスフィルタでカチカチ感を強調
     var hp = _audioCtx.createBiquadFilter();
     hp.type = 'highpass';
-    hp.frequency.value = 2200;
-
+    hp.frequency.value = 2400;
     var gain = _audioCtx.createGain();
-    gain.gain.value = 0.55;
-
+    gain.gain.value = 0.52;
     src.connect(hp); hp.connect(gain); gain.connect(_audioCtx.destination);
-    src.start(t);
+    src.start(when !== undefined ? when : _audioCtx.currentTime);
   } catch(e) {}
+}
+
+function _playTick() { _playTickAt(); }
+
+// ★ 慣性フェーズのカチカチ音を touchend 時（ユーザーのジェスチャー内）に先行スケジュール
+// iOS はここ（同期コード）でのみ将来の音声スケジュールが許可される
+function _scheduleInertialTicks(place, vel) {
+  if (!_audioCtx || !_audioUnlocked) return;
+  var FRICTION  = 0.89;
+  var MIN_VEL   = 0.005;
+  var FRAME_MS  = 16.67;
+  var simPos    = _dPos[place];
+  var simV      = vel;
+  var now       = _audioCtx.currentTime;
+  var simTime   = now + 0.03;   // 30ms後から開始
+  var maxTime   = now + 3.0;    // 最大3秒先まで
+
+  while (Math.abs(simV) > MIN_VEL && simTime < maxTime) {
+    var prevRound = Math.round(simPos);
+    simPos += simV * FRAME_MS;
+    simV   *= FRICTION;
+    simTime += FRAME_MS / 1000;
+    var newRound = Math.round(simPos);
+    if (newRound !== prevRound) {
+      _playTickAt(simTime);
+    }
+  }
 }
 
 /* ---------- 描画 ---------- */
@@ -1016,12 +1057,10 @@ function _dRender(place) {
     inner.appendChild(el);
   }
 
-  // 整数位置が変わったとき → 音 + dialValues 更新
+  // 整数位置が変わったとき → dialValues 更新（音はタッチハンドラ側で制御）
   var intPos = Math.round(pos);
   if (intPos !== _dLastInt[place]) {
     _dLastInt[place] = intPos;
-    _playTick();
-    if (navigator.vibrate) navigator.vibrate(8);
     dialValues[place] = ((intPos % 10) + 10) % 10;
     renderDialTotal();
     updateRegisterBtn();
@@ -1091,11 +1130,12 @@ function _bindDial(place) {
   var startY = 0, startPos = 0;
   var lastY  = 0, lastTime = 0, vel = 0;
   var isDrag = false;
-  var tapThreshold = 6;  // px 以下はタップ扱い
+  var tapThreshold = 6;
   var moved = 0;
+  var _prevRoundPos = 0;  // touchmove中の整数通過検知用
 
   function onStart(cy) {
-    _initAudio();
+    _ensureAudio();  // ★ iOS対応: ジェスチャー内でアンロック確認
     if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
     isDrag   = true;
     startY   = cy;
@@ -1104,18 +1144,27 @@ function _bindDial(place) {
     lastTime = Date.now();
     vel      = 0;
     moved    = 0;
+    _prevRoundPos = Math.round(_dPos[place]);
   }
 
   function onMove(cy) {
     if (!isDrag) return;
     var now = Date.now();
     var dt  = Math.max(1, now - lastTime);
-    // 上にスワイプ → cy 減少 → pos 増加（値が増える）
     vel     = -(cy - lastY) / dt / ITEM_H;
     lastY   = cy;
     lastTime = now;
     moved   = Math.abs(cy - startY);
     _dPos[place] = startPos - (cy - startY) / ITEM_H;
+
+    // ★ iOS対応: touchmove はユーザーのジェスチャー内なので音を直接鳴らせる
+    var newRound = Math.round(_dPos[place]);
+    if (newRound !== _prevRoundPos) {
+      _prevRoundPos = newRound;
+      _playTick();
+      if (navigator.vibrate) navigator.vibrate(7);
+    }
+
     _dRender(place);
   }
 
@@ -1129,9 +1178,14 @@ function _bindDial(place) {
       var relY = cy - rect.top;
       var delta = relY < WHEEL_H / 2 ? -1 : 1;
       _dPos[place] = Math.round(_dPos[place]) + delta;
+      // ★ タップ音をジェスチャー内（touchend）で鳴らす
+      _playTick();
+      if (navigator.vibrate) navigator.vibrate(7);
       _dRender(place);
       _dSnap(place);
     } else if (Math.abs(vel) > 0.005) {
+      // ★ iOS対応: 慣性フェーズの音を touchend 時（まだジェスチャー内）に先行スケジュール
+      _scheduleInertialTicks(place, vel);
       _dMomentum(place, vel);
     } else {
       _dSnap(place);
@@ -1168,12 +1222,13 @@ function _bindDial(place) {
     if (mdrag) { mdrag = false; onEnd(e.clientY, wheel); }
   });
 
-  // ホイールスクロール
+  // ホイールスクロール（PC用・mousedownはユーザーのジェスチャー内なので音OK）
   wheel.addEventListener('wheel', function(e) {
     e.preventDefault();
-    _initAudio();
+    _ensureAudio();
     if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
     _dPos[place] += e.deltaY > 0 ? 1 : -1;
+    _playTick();
     _dRender(place);
     _dSnap(place);
   }, { passive: false });
