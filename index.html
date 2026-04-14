@@ -188,7 +188,7 @@
       padding: 18px 18px 16px;
     }
 
-    /* ===== スキャンエリア（横長：縦を1/2に） ===== */
+    /* ===== スキャンエリア（横長） ===== */
     .scan-square {
       position: relative;
       width: 100%;
@@ -285,7 +285,6 @@
       z-index: 1;
     }
 
-    /* ===== scan-label は枠の外側に表示 ===== */
     .scan-label {
       font-size: 15px;
       font-weight: 700;
@@ -379,7 +378,6 @@
       font-weight: 500;
     }
 
-    /* OCR結果・図番入力 */
     .ocr-result-wrap {
       display: none;
       margin-top: 10px;
@@ -428,6 +426,14 @@
       display: block;
     }
 
+    .field-label .label-sub {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-mid);
+      margin-left: 6px;
+    }
+
+    /* ===== field-value: div と input 共通 ===== */
     .field-value {
       background: var(--surface2);
       border: 2px solid var(--blue-lt);
@@ -442,17 +448,51 @@
       font-weight: 500;
     }
 
-    .field-value.filled {
+    /* ★改修②: input要素としてのfield-value */
+    input.field-value {
+      display: block;
+      width: 100%;
+      font-family: var(--font);
+      outline: none;
+      -webkit-appearance: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    input.field-value:not([readonly]):focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(46,107,224,0.15);
+    }
+
+    input.field-value[readonly] {
+      cursor: default;
+      opacity: 0.85;
+    }
+
+    input.field-value::placeholder {
+      color: #a0b0cc;
+      font-weight: 400;
+      font-size: 15px;
+    }
+
+    .field-value.filled, input.field-value.filled {
       background: var(--filled-lt);
       border-color: var(--filled);
       color: var(--filled);
       font-weight: 700;
     }
 
-    .field-value.warn {
+    .field-value.warn, input.field-value.warn {
       background: var(--warn-lt);
       border-color: var(--warn);
       color: var(--warn);
+    }
+
+    /* ★改修③: 製番入力スタイル */
+    #seibanInput {
+      letter-spacing: 3px;
+      font-family: monospace;
+      font-size: 20px;
+      font-weight: 700;
     }
 
     /* ===== ダイヤル式数量入力 ===== */
@@ -756,7 +796,7 @@
     <div class="subtitle" id="currentDate">読込中...</div>
   </header>
 
-  <!-- ★ 場所・担当者カード（上部） -->
+  <!-- ★ 場所・担当者カード（上部固定） -->
   <div class="card operator-card" id="operatorCard">
     <div class="card-label">
       場所 ／ 担当者
@@ -766,13 +806,15 @@
     <div class="operator-row">
       <div class="operator-field">
         <label class="field-label" for="departmentSelect">場所</label>
-        <select id="departmentSelect" onchange="onOperatorChange()">
+        <!-- ★改修①: onchangeをonDepartmentChange()に変更 -->
+        <select id="departmentSelect" onchange="onDepartmentChange()">
           <option value="">― 選択 ―</option>
         </select>
       </div>
       <div class="operator-field">
         <label class="field-label" for="personnelSelect">担当者</label>
-        <select id="personnelSelect" onchange="onOperatorChange()">
+        <!-- ★改修①: onchangeをonPersonnelChange()に変更 -->
+        <select id="personnelSelect" onchange="onPersonnelChange()">
           <option value="">― 選択 ―</option>
         </select>
       </div>
@@ -783,7 +825,6 @@
   <div class="card scan-card" id="scanCard">
     <div class="card-label">OCR 図番読取</div>
 
-    <!-- スキャンエリア（横長） -->
     <div class="scan-square" id="scanSquare">
       <div class="qr-corner tl"></div>
       <div class="qr-corner tr"></div>
@@ -794,28 +835,23 @@
       <div id="scanFlash"></div>
       <div class="scan-icon" id="scanIcon">🔍</div>
     </div>
-    <!-- ★ ガイドメッセージをscan-squareの外側に移動 -->
     <div class="scan-label" id="scanLabel">🔍 下のボタンでOCR開始</div>
 
-    <!-- カメラ起動ボタン -->
     <button id="btnCameraStart" class="btn-cam-start ocr-btn" onclick="startCamera()">
       🔍 OCRスキャン開始
     </button>
 
-    <!-- カメラ停止ボタン -->
     <button id="btnCameraStop" onclick="stopCamera()">
       ⏹ カメラを停止
     </button>
 
     <div class="scan-hint" id="scanHint">🔍 ガイド枠に図番を合わせてください</div>
 
-    <!-- OCRデバッグプレビュー -->
     <div id="ocrDebugWrap">
       <p>▼ OCRに送っている画像</p>
       <canvas id="ocrDebugCanvas"></canvas>
     </div>
 
-    <!-- OCR結果・図番入力 -->
     <div class="ocr-result-wrap visible" id="ocrResultWrap">
       <div class="ocr-part-label">読み取った図番</div>
       <input id="ocrPartInput" type="text" value="----" readonly
@@ -824,32 +860,54 @@
       <div class="ocr-part-hint" id="ocrPartHint">OCR読み取り後、手修正も可能です</div>
     </div>
 
-    <!-- マスタ検索ボタン -->
     <button id="btnMasterSearch" class="btn-cam-start btn-master-search" onclick="doMasterSearch()" style="display:none;">
       🔎 マスタ検索
     </button>
   </div>
 
-  <!-- 登録情報エリア -->
-  <div class="card" id="infoCard">
+  <!-- ★改修②③: 登録情報エリア（手入力対応・製番追加） -->
+  <div class="card" id="infoCard" style="position:relative;">
     <div class="card-label">登録情報</div>
+    <!-- ★改修②: 登録情報クリアボタン -->
+    <button class="operator-clear-btn" onclick="clearInfoCard()" title="登録情報をクリア">クリア</button>
 
+    <!-- ★改修②: 図番（手入力可能なinput） -->
     <div style="margin-bottom:10px;">
       <span class="field-label">図番</span>
-      <div class="field-value" id="zunoDisplay">―</div>
+      <input type="text" id="zunoDisplay" class="field-value"
+        placeholder="図番を直接入力できます"
+        oninput="onZunoManualInput(this)"
+        onblur="onZunoManualBlur()">
     </div>
 
+    <!-- ★改修②: 品名（手入力可能なinput） -->
     <div style="margin-bottom:10px;">
       <span class="field-label">品名</span>
-      <div class="field-value" id="hinmeiDisplay">―</div>
+      <input type="text" id="hinmeiDisplay" class="field-value"
+        placeholder="品名（マスタ検索で自動入力）"
+        oninput="updateRegisterBtn()">
     </div>
 
+    <!-- ★改修③: 製番（新規追加） -->
+    <div style="margin-bottom:10px;">
+      <span class="field-label">
+        製番
+        <span class="label-sub">（任意・9桁数字）</span>
+      </span>
+      <input type="text" id="seibanInput" class="field-value"
+        placeholder="例: 012345678"
+        maxlength="9"
+        inputmode="numeric"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'');updateRegisterBtn()">
+    </div>
+
+    <!-- サイズ（非表示） -->
     <div style="display:none;">
       <span class="field-label">サイズ</span>
       <div class="field-value" id="sizeDisplay">―</div>
     </div>
 
-    <!-- ★ ダイヤル式数量入力 -->
+    <!-- ダイヤル式数量入力 -->
     <div>
       <span class="field-label">数量（ダイヤルで入力）</span>
 
@@ -937,6 +995,7 @@ window.addEventListener('load', function () {
   loadMasterData();
   initDials();
   restoreOperator();
+  setManualInputEnabled(true);  // ★改修②: 初期状態は手入力可能
 });
 
 function updateDateTime() {
@@ -947,9 +1006,13 @@ function updateDateTime() {
     '  ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
 }
 
+/* ============================================================
+   GAS通信共通関数
+   ★改修①: getPersonnel を GETアクションに追加
+============================================================ */
 function callGAS(action, params) {
   return new Promise(function(resolve, reject) {
-    var isGet = (action === 'getMaster' || action === 'lookup');
+    var isGet = (action === 'getMaster' || action === 'lookup' || action === 'getPersonnel');
     if (isGet) {
       var qs = 'action=' + encodeURIComponent(action);
       Object.keys(params || {}).forEach(function(k){
@@ -973,11 +1036,14 @@ function callGAS(action, params) {
   });
 }
 
+/* ============================================================
+   マスタデータ取得（部署・在庫区分のみ）
+   ★改修①: 担当者は場所選択時に動的取得するためここでは取得しない
+============================================================ */
 function loadMasterData() {
   callGAS('getMaster', {})
     .then(function(data){
       fillSelect('departmentSelect',    data.departments    || []);
-      fillSelect('personnelSelect',     data.personnel      || []);
       fillSelect('inventoryTypeSelect', data.inventoryTypes || []);
       restoreOperator();
     })
@@ -996,14 +1062,57 @@ function fillSelect(id, items) {
   });
 }
 
+/* ============================================================
+   ★改修①: 場所選択時に担当者リストを動的ロード
+============================================================ */
 var savedDept   = '';
 var savedPerson = '';
 
-function onOperatorChange() {
+function onDepartmentChange() {
   savedDept   = document.getElementById('departmentSelect').value;
+  savedPerson = '';
+
+  try {
+    sessionStorage.setItem('inv_dept', savedDept);
+    sessionStorage.removeItem('inv_person');
+  } catch(e){}
+
+  // 担当者リストをリセット
+  var sel = document.getElementById('personnelSelect');
+  sel.innerHTML = '<option value="">― 選択 ―</option>';
+
+  updateLockBadge();
+  updateRegisterBtn();
+
+  if (!savedDept) return;
+
+  // 選択した場所に紐づく担当者を取得
+  loadPersonnelForDept(savedDept, '');
+}
+
+function loadPersonnelForDept(dept, restoreValue) {
+  if (!dept) return;
+  callGAS('getPersonnel', { department: dept })
+    .then(function(data) {
+      fillSelect('personnelSelect', data.personnel || []);
+      if (restoreValue) {
+        var sel = document.getElementById('personnelSelect');
+        sel.value = restoreValue;
+        if (sel.value === restoreValue) {
+          savedPerson = restoreValue;
+        }
+      }
+      updateLockBadge();
+      updateRegisterBtn();
+    })
+    .catch(function() {
+      showToast('⚠️ 担当者データの取得に失敗しました', 'error');
+    });
+}
+
+function onPersonnelChange() {
   savedPerson = document.getElementById('personnelSelect').value;
   try {
-    sessionStorage.setItem('inv_dept',   savedDept);
     sessionStorage.setItem('inv_person', savedPerson);
   } catch(e){}
   updateLockBadge();
@@ -1017,12 +1126,14 @@ function restoreOperator() {
     if (dept) {
       savedDept = dept;
       var sel = document.getElementById('departmentSelect');
-      if (sel) sel.value = dept;
-    }
-    if (person) {
-      savedPerson = person;
-      var sel2 = document.getElementById('personnelSelect');
-      if (sel2) sel2.value = person;
+      if (sel) {
+        sel.value = dept;
+        if (sel.value === dept && dept) {
+          // ★改修①: 担当者リストを動的に復元
+          savedPerson = person;
+          loadPersonnelForDept(dept, person);
+        }
+      }
     }
   } catch(e){}
   updateLockBadge();
@@ -1031,7 +1142,9 @@ function restoreOperator() {
 function clearOperator() {
   savedDept = ''; savedPerson = '';
   document.getElementById('departmentSelect').value = '';
-  document.getElementById('personnelSelect').value  = '';
+  // 担当者リストもリセット
+  var sel = document.getElementById('personnelSelect');
+  sel.innerHTML = '<option value="">― 選択 ―</option>';
   try {
     sessionStorage.removeItem('inv_dept');
     sessionStorage.removeItem('inv_person');
@@ -1042,12 +1155,76 @@ function clearOperator() {
 }
 
 function updateLockBadge() {
-  var badge = document.getElementById('lockBadge');
+  var badge  = document.getElementById('lockBadge');
   var dept   = document.getElementById('departmentSelect').value;
   var person = document.getElementById('personnelSelect').value;
   badge.style.display = (dept || person) ? '' : 'none';
 }
 
+/* ============================================================
+   ★改修②: 手入力モード制御
+   カメラOFF → 図番・品名を手入力可能
+   カメラON  → 読み取り専用に切り替え
+============================================================ */
+function setManualInputEnabled(enabled) {
+  var zunoInp   = document.getElementById('zunoDisplay');
+  var hinmeiInp = document.getElementById('hinmeiDisplay');
+  if (enabled) {
+    zunoInp.removeAttribute('readonly');
+    hinmeiInp.removeAttribute('readonly');
+    zunoInp.placeholder   = '図番を直接入力できます';
+    hinmeiInp.placeholder = '品名（マスタ検索で自動入力）';
+  } else {
+    zunoInp.setAttribute('readonly', true);
+    hinmeiInp.setAttribute('readonly', true);
+  }
+}
+
+/* ★改修②: 図番手入力時の処理 */
+function onZunoManualInput(inp) {
+  // 図番は英大文字・数字・ハイフンのみ許可
+  inp.value = inp.value.replace(/[^A-Za-z0-9\-]/g, '').toUpperCase();
+  currentZuno = null;  // マスタ未検索状態にリセット
+  updateRegisterBtn();
+}
+
+/* ★改修②: 図番入力フォーカスアウト → 自動マスタ検索 */
+function onZunoManualBlur() {
+  if (cameraActive) return;
+  var code = document.getElementById('zunoDisplay').value.trim();
+  if (!code) return;
+  showLoading(true, 'マスタ検索中…');
+  callGAS('lookup', { barcode: code })
+    .then(function(d) { showLoading(false); applyLookupResult(d); })
+    .catch(function(e) { showLoading(false); showToast('❌ 検索エラー: ' + e.message, 'error'); });
+}
+
+/* ★改修②: 登録情報カードのクリア */
+function clearInfoCard() {
+  currentZuno = null; currentHinmei = ''; currentSize = '';
+
+  var zunoInp   = document.getElementById('zunoDisplay');
+  var hinmeiInp = document.getElementById('hinmeiDisplay');
+  zunoInp.value   = '';
+  hinmeiInp.value = '';
+  zunoInp.className   = 'field-value';
+  hinmeiInp.className = 'field-value';
+
+  document.getElementById('seibanInput').value = '';  // ★改修③
+
+  var sizeEl = document.getElementById('sizeDisplay');
+  sizeEl.textContent = '―';
+  sizeEl.className   = 'field-value';
+
+  resetDials();
+  document.getElementById('inventoryTypeSelect').value = '';
+  document.getElementById('registerBtn').disabled = true;
+  showToast('🗑️ 登録情報をクリアしました', 'updated');
+}
+
+/* ============================================================
+   ダイヤル
+============================================================ */
 var ITEM_H = 40;
 var PAD    = 2;
 
@@ -1173,6 +1350,10 @@ function resetDials() {
   renderDialTotal();
 }
 
+/* ============================================================
+   カメラ制御
+   ★改修②: 起動時に手入力を無効化、停止時に有効化
+============================================================ */
 function startCamera() {
   if (cameraActive) return;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -1199,6 +1380,7 @@ function startCamera() {
     document.getElementById('ocrGuide').style.display = 'block';
     document.getElementById('scanLabel').textContent  = '🔍 ガイド枠に図番を合わせてください';
     document.getElementById('scanHint').textContent   = '🔍 2秒ごとに自動OCR解析中…';
+    setManualInputEnabled(false);  // ★改修②: カメラON中は手入力不可
     video.onloadedmetadata = function(){ video.play().then(startOcrLoop); };
   })
   .catch(function(err){
@@ -1226,6 +1408,7 @@ function stopCamera() {
   cameraActive = false; ocrRunning = false;
   document.getElementById('scanLabel').textContent = '🔍 下のボタンでOCR開始';
   document.getElementById('scanHint').textContent  = '🔍 ガイド枠に図番を合わせてください';
+  setManualInputEnabled(true);  // ★改修②: カメラ停止後は手入力可能に
 }
 
 function startOcrLoop() {
@@ -1316,6 +1499,10 @@ function captureOcr() {
   return out.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
 }
 
+/* ============================================================
+   OCR結果セット
+   ★改修②: OCRで読み取った図番を登録情報の図番inputにも反映（上書き）
+============================================================ */
 function setOcrResult(code) {
   code = code.replace(/[\s\-]/g, '');
   var inp = document.getElementById('ocrPartInput');
@@ -1325,6 +1512,11 @@ function setOcrResult(code) {
   document.getElementById('ocrPartHint').textContent = '修正が必要な場合は直接編集し、マスタ検索してください';
   document.getElementById('ocrResultWrap').classList.add('visible');
   document.getElementById('btnMasterSearch').style.display = 'flex';
+
+  // ★改修②: 登録情報の図番inputにも反映（手入力中の値を上書き）
+  var zunoInp = document.getElementById('zunoDisplay');
+  zunoInp.value     = code.toUpperCase();
+  zunoInp.className = 'field-value';
 }
 
 function onOcrPartEdit() {
@@ -1358,10 +1550,14 @@ function doMasterSearch() {
     .catch(function(e){ showLoading(false); showToast('❌ 検索エラー: ' + e.message, 'error'); });
 }
 
+/* ============================================================
+   マスタ検索結果を画面に反映
+   ★改修②: div.textContent → input.value に変更
+============================================================ */
 function applyLookupResult(result) {
-  var zuno    = result.zuno    || result.part  || '';
-  var hinmei  = result.hinmei || result.name  || '';
-  var size    = result.size   || '';
+  var zuno     = result.zuno    || result.part  || '';
+  var hinmei   = result.hinmei || result.name  || '';
+  var size     = result.size   || '';
   var inMaster = (result.inMaster !== undefined)
     ? result.inMaster
     : (result.success && hinmei && hinmei !== '（マスタ未登録）');
@@ -1370,15 +1566,20 @@ function applyLookupResult(result) {
   currentHinmei = hinmei;
   currentSize   = size;
 
-  function setField(id, val, cls) {
-    var el = document.getElementById(id);
-    el.textContent = val || '―';
-    el.className = 'field-value' + (cls ? ' ' + cls : '');
-  }
+  // ★改修②: inputのvalueとclassNameを更新
+  var zunoInp   = document.getElementById('zunoDisplay');
+  var hinmeiInp = document.getElementById('hinmeiDisplay');
+  var sizeEl    = document.getElementById('sizeDisplay');
 
-  setField('zunoDisplay',   currentZuno,   'filled');
-  setField('hinmeiDisplay', hinmei || '（マスタ未登録）', inMaster ? 'filled' : 'warn');
-  setField('sizeDisplay',   size   || '―',               inMaster ? 'filled' : 'warn');
+  zunoInp.value     = currentZuno;
+  zunoInp.className = 'field-value' + (currentZuno ? ' filled' : '');
+
+  hinmeiInp.value     = inMaster ? (hinmei || '') : (hinmei !== '（マスタ未登録）' ? hinmei : '');
+  hinmeiInp.className = 'field-value' + (inMaster ? ' filled' : ' warn');
+  hinmeiInp.placeholder = inMaster ? '品名（マスタ検索で自動入力）' : '（マスタ未登録 — 手入力可）';
+
+  sizeEl.textContent = size || '―';
+  sizeEl.className   = 'field-value' + (inMaster ? ' filled' : ' warn');
 
   var inp = document.getElementById('ocrPartInput');
   inp.value = currentZuno;
@@ -1393,31 +1594,45 @@ function applyLookupResult(result) {
   updateRegisterBtn();
 }
 
+/* ============================================================
+   登録ボタン有効化チェック
+   ★改修②: .textContent → .value に変更
+============================================================ */
 function updateRegisterBtn() {
-  var zuno   = document.getElementById('zunoDisplay').textContent.trim();
-  var qty    = getDialTotal();
-  var dept   = document.getElementById('departmentSelect').value;
-  var pers   = document.getElementById('personnelSelect').value;
-  var itype  = document.getElementById('inventoryTypeSelect').value;
+  var zuno  = document.getElementById('zunoDisplay').value.trim();
+  var qty   = getDialTotal();
+  var dept  = document.getElementById('departmentSelect').value;
+  var pers  = document.getElementById('personnelSelect').value;
+  var itype = document.getElementById('inventoryTypeSelect').value;
   document.getElementById('registerBtn').disabled =
-    !(zuno && zuno !== '―' && qty >= 0 && dept && pers && itype);
+    !(zuno && qty >= 0 && dept && pers && itype);
 }
 
+/* ============================================================
+   棚卸データ登録
+   ★改修③: 製番（seiban）を追加
+============================================================ */
 function registerData() {
   var now = new Date();
   var pad = function(n){ return String(n).padStart(2,'0'); };
-  var qty = getDialTotal();
+  var qty    = getDialTotal();
+  var zuno   = document.getElementById('zunoDisplay').value.trim().toUpperCase();
+  var hinmei = document.getElementById('hinmeiDisplay').value.trim() || currentHinmei;
+  var seiban = document.getElementById('seibanInput').value.trim();   // ★改修③
+
   var data = {
     date:          now.getFullYear() + '/' + pad(now.getMonth()+1) + '/' + pad(now.getDate()),
     time:          pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()),
-    zuno:          document.getElementById('zunoDisplay').textContent.trim(),
-    hinmei:        currentHinmei,
+    zuno:          zuno,
+    seiban:        seiban,   // ★改修③
+    hinmei:        hinmei,
     size:          currentSize,
     quantity:      qty,
     department:    document.getElementById('departmentSelect').value,
     personnel:     document.getElementById('personnelSelect').value,
     inventoryType: document.getElementById('inventoryTypeSelect').value
   };
+
   showLoading(true, '登録中…');
   callGAS('register', data)
     .then(function(result){
@@ -1448,24 +1663,44 @@ function closeModal() {
   resetAll();
 }
 
+/* ============================================================
+   全リセット
+   ★改修②③: input.value のクリア・製番フィールド追加
+============================================================ */
 function resetAll() {
   if (cameraActive) stopCamera();
   currentZuno = null; currentHinmei = ''; currentSize = '';
+
+  // OCRスキャンカードをリセット
   var ocrInp = document.getElementById('ocrPartInput');
   ocrInp.value = '----';
   ocrInp.className = '';
   ocrInp.setAttribute('readonly', true);
   document.getElementById('ocrPartHint').textContent = 'OCR読み取り後、手修正も可能です';
   document.getElementById('ocrDebugWrap').style.display = 'none';
-  ['zunoDisplay','hinmeiDisplay','sizeDisplay'].forEach(function(id){
-    var el = document.getElementById(id);
-    el.textContent = '―';
-    el.className = 'field-value';
-  });
+  document.getElementById('btnMasterSearch').style.display = 'none';
+
+  // ★改修②: 登録情報カードをリセット（input.value）
+  var zunoInp   = document.getElementById('zunoDisplay');
+  var hinmeiInp = document.getElementById('hinmeiDisplay');
+  zunoInp.value       = '';
+  hinmeiInp.value     = '';
+  zunoInp.className   = 'field-value';
+  hinmeiInp.className = 'field-value';
+  hinmeiInp.placeholder = '品名（マスタ検索で自動入力）';
+
+  // ★改修③: 製番クリア
+  document.getElementById('seibanInput').value = '';
+
+  var sizeEl = document.getElementById('sizeDisplay');
+  sizeEl.textContent = '―';
+  sizeEl.className   = 'field-value';
+
   resetDials();
   document.getElementById('inventoryTypeSelect').value = '';
   document.getElementById('registerBtn').disabled = true;
-  document.getElementById('btnMasterSearch').style.display = 'none';
+
+  setManualInputEnabled(true);  // ★改修②: リセット後は手入力可能に戻す
 }
 
 function showLoading(show, msg) {
