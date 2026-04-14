@@ -934,77 +934,84 @@ PLACES.forEach(function(p) {
   _dLastInt[p] = 0;
 });
 
-/* ---------- 音声 ---------- */
-var _audioCtx = null;
-var _audioUnlocked = false;
+/* ---------- 音声 ----------
+   iOS Safari の Web Audio ルール:
+   「bufferSource.start() を touchstart/touchend/click などの
+     直接ユーザーインタラクション内で1回呼ぶと AudioContext がアンロックされ、
+     それ以降は touchmove や rAF からでも鳴らせる」
+   ★ サイレントバッファではアンロックされない。実際の音が必要。
+   ★ resume().then() は非同期なので状態管理に使わない。
+--------------------------------------- */
+var _audioCtx  = null;
+var _audioReady = false;   // 同期フラグ（Promise.then を使わない）
 
-// ★ iOS対応: ユーザーのジェスチャー内でサイレントバッファを再生してアンロック
-function _initAudio() {
-  if (_audioCtx) return;
-  try {
-    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // iOS は初回ユーザーインタラクション内でサイレント再生しないとロックされる
-    var silentBuf = _audioCtx.createBuffer(1, 1, 22050);
-    var silentSrc = _audioCtx.createBufferSource();
-    silentSrc.buffer = silentBuf;
-    silentSrc.connect(_audioCtx.destination);
-    silentSrc.start(0);
-    if (_audioCtx.state === 'suspended') {
-      _audioCtx.resume().then(function() { _audioUnlocked = true; });
-    } else {
-      _audioUnlocked = true;
-    }
-  } catch(e) {}
-}
-
-// ★ ダイヤルの最初のタッチで AudioContext を確実に初期化
-function _ensureAudio() {
-  if (!_audioCtx) { _initAudio(); return; }
-  if (_audioCtx.state === 'suspended') {
-    _audioCtx.resume().then(function() { _audioUnlocked = true; });
+// 共通: tick音のノードを生成して返す（startはしない）
+function _makeTickNodes(gainVal) {
+  var ctx = _audioCtx;
+  var sr  = ctx.sampleRate;
+  var len = Math.floor(sr * 0.014);          // 14ms
+  var buf = ctx.createBuffer(1, len, sr);
+  var d   = buf.getChannelData(0);
+  for (var i = 0; i < len; i++) {
+    d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.13));
   }
+  var src = ctx.createBufferSource();
+  src.buffer = buf;
+  var hp  = ctx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 2200;
+  var g   = ctx.createGain();
+  g.gain.value = gainVal !== undefined ? gainVal : 0.48;
+  src.connect(hp); hp.connect(g); g.connect(ctx.destination);
+  return { src: src, ctx: ctx };
 }
 
-document.addEventListener('touchstart', _initAudio, { once: true, passive: true });
-document.addEventListener('mousedown',  _initAudio, { once: true, passive: true });
-
-// ★ 指定時刻にカチカチ音を再生（when=AudioContext時刻、省略時は即時）
-function _playTickAt(when) {
-  if (!_audioCtx || !_audioUnlocked) return;
+// ★ iOS アンロック: touchstart 内で呼ぶ。実際に音を鳴らしてアンロック完了
+function _unlockAudio() {
   try {
-    var sr  = _audioCtx.sampleRate;
-    var len = Math.floor(sr * 0.016);
-    var buf  = _audioCtx.createBuffer(1, len, sr);
-    var data = buf.getChannelData(0);
-    for (var i = 0; i < len; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.16));
+    if (!_audioCtx) {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
-    var src = _audioCtx.createBufferSource();
-    src.buffer = buf;
-    var hp = _audioCtx.createBiquadFilter();
-    hp.type = 'highpass';
-    hp.frequency.value = 2400;
-    var gain = _audioCtx.createGain();
-    gain.gain.value = 0.52;
-    src.connect(hp); hp.connect(gain); gain.connect(_audioCtx.destination);
-    src.start(when !== undefined ? when : _audioCtx.currentTime);
+    // suspended なら resume（iOS13以降は作成時点で running のことが多い）
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    // ★ 実音を鳴らすことで iOS の Web Audio を確実にアンロック
+    //    （サイレントバッファでは不十分）
+    var o = _makeTickNodes(0.42);
+    o.src.start(o.ctx.currentTime);
+    _audioReady = true;          // 同期で true にする（Promise.then 不要）
   } catch(e) {}
 }
 
-function _playTick() { _playTickAt(); }
+// 即時再生
+function _playTick() {
+  if (!_audioCtx || !_audioReady) return;
+  try {
+    var o = _makeTickNodes(0.48);
+    o.src.start(o.ctx.currentTime);
+  } catch(e) {}
+}
+
+// 未来時刻に再生（慣性フェーズ用 — touchend 内で呼ぶこと）
+function _playTickAt(when) {
+  if (!_audioCtx || !_audioReady) return;
+  try {
+    var o = _makeTickNodes(0.45);
+    o.src.start(when);
+  } catch(e) {}
+}
 
 // ★ 慣性フェーズのカチカチ音を touchend 時（ユーザーのジェスチャー内）に先行スケジュール
 // iOS はここ（同期コード）でのみ将来の音声スケジュールが許可される
 function _scheduleInertialTicks(place, vel) {
-  if (!_audioCtx || !_audioUnlocked) return;
+  if (!_audioCtx || !_audioReady) return;
   var FRICTION  = 0.89;
   var MIN_VEL   = 0.005;
   var FRAME_MS  = 16.67;
   var simPos    = _dPos[place];
   var simV      = vel;
   var now       = _audioCtx.currentTime;
-  var simTime   = now + 0.03;   // 30ms後から開始
-  var maxTime   = now + 3.0;    // 最大3秒先まで
+  var simTime   = now + 0.03;
+  var maxTime   = now + 3.0;
 
   while (Math.abs(simV) > MIN_VEL && simTime < maxTime) {
     var prevRound = Math.round(simPos);
@@ -1135,7 +1142,8 @@ function _bindDial(place) {
   var _prevRoundPos = 0;  // touchmove中の整数通過検知用
 
   function onStart(cy) {
-    _ensureAudio();  // ★ iOS対応: ジェスチャー内でアンロック確認
+    // ★ iOS対応: touchstart 内で実音を鳴らして AudioContext をアンロック
+    _unlockAudio();
     if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
     isDrag   = true;
     startY   = cy;
@@ -1222,10 +1230,10 @@ function _bindDial(place) {
     if (mdrag) { mdrag = false; onEnd(e.clientY, wheel); }
   });
 
-  // ホイールスクロール（PC用・mousedownはユーザーのジェスチャー内なので音OK）
+  // ホイールスクロール（PC用）
   wheel.addEventListener('wheel', function(e) {
     e.preventDefault();
-    _ensureAudio();
+    _unlockAudio();
     if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
     _dPos[place] += e.deltaY > 0 ? 1 : -1;
     _playTick();
