@@ -134,16 +134,8 @@
       position: relative;
     }
 
-    .operator-row {
-      display: flex;
-      gap: 8px;
-    }
-
-    .operator-field {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
+    .operator-row { display: flex; gap: 8px; }
+    .operator-field { flex: 1; display: flex; flex-direction: column; }
 
     .operator-clear-btn {
       position: absolute;
@@ -162,7 +154,6 @@
       transition: background 0.15s;
       white-space: nowrap;
     }
-
     .operator-clear-btn:active { background: #ffe0b0; }
 
     .operator-lock-badge {
@@ -186,7 +177,6 @@
       padding: 14px 14px 12px;
     }
 
-    /* ===== スキャンエリア（横長） ===== */
     .scan-square {
       position: relative;
       width: 100%;
@@ -295,21 +285,9 @@
       border-radius: var(--radius-xs);
     }
 
-    #ocrDebugWrap {
-      display: none;
-      margin: 4px 0;
-      text-align: center;
-    }
-    #ocrDebugWrap p {
-      font-size: 10px;
-      color: #888;
-      margin-bottom: 2px;
-    }
-    #ocrDebugCanvas {
-      max-width: 100%;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
+    #ocrDebugWrap { display: none; margin: 4px 0; text-align: center; }
+    #ocrDebugWrap p { font-size: 10px; color: #888; margin-bottom: 2px; }
+    #ocrDebugCanvas { max-width: 100%; border: 1px solid #ccc; border-radius: 4px; }
 
     .btn-cam-start {
       margin-top: 8px;
@@ -384,11 +362,7 @@
       border-radius: var(--radius-xs);
     }
     .ocr-result-wrap.visible { display: block; }
-    .ocr-part-label {
-      font-size: 10px;
-      color: #888;
-      margin-bottom: 3px;
-    }
+    .ocr-part-label { font-size: 10px; color: #888; margin-bottom: 3px; }
     #ocrPartInput {
       width: 100%;
       font-size: 24px;
@@ -407,12 +381,7 @@
     #ocrPartInput:focus    { border-color: #00ff88; }
     #ocrPartInput.notfound { color: #ff5555; }
     #ocrPartInput.editing  { border-color: #ffaa00; color: #ffaa00; }
-    .ocr-part-hint {
-      font-size: 10px;
-      color: #888;
-      text-align: center;
-      margin-top: 3px;
-    }
+    .ocr-part-hint { font-size: 10px; color: #888; text-align: center; margin-top: 3px; }
 
     /* ===== 登録情報エリア ===== */
     .field-label {
@@ -423,7 +392,6 @@
       margin-bottom: 4px;
       display: block;
     }
-
     .field-label .label-sub {
       font-size: 12px;
       font-weight: 500;
@@ -453,22 +421,12 @@
       -webkit-appearance: none;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
-
     input.field-value:not([readonly]):focus {
       border-color: var(--blue);
       box-shadow: 0 0 0 3px rgba(46,107,224,0.14);
     }
-
-    input.field-value[readonly] {
-      cursor: default;
-      opacity: 0.85;
-    }
-
-    input.field-value::placeholder {
-      color: #a0b0cc;
-      font-weight: 400;
-      font-size: 13px;
-    }
+    input.field-value[readonly] { cursor: default; opacity: 0.85; }
+    input.field-value::placeholder { color: #a0b0cc; font-weight: 400; font-size: 13px; }
 
     .field-value.filled, input.field-value.filled {
       background: var(--filled-lt);
@@ -476,7 +434,6 @@
       color: var(--filled);
       font-weight: 700;
     }
-
     .field-value.warn, input.field-value.warn {
       background: var(--warn-lt);
       border-color: var(--warn);
@@ -490,20 +447,33 @@
       font-weight: 700;
     }
 
-    /* ===== ダイヤル式数量入力 ===== */
+    /* ===================================================
+       ★ 改良ダイヤルシステム
+       ================================================= */
+
+    .dial-section-label {
+      font-size: 13px;
+      color: var(--blue-dk);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+
     .dial-container {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      gap: 4px;
-      padding: 6px 0 4px;
+      gap: 2px;
+      padding: 0 0 4px;
     }
 
     .dial-group {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
+      flex: 1;
+      max-width: 72px;
     }
 
     .dial-unit-label {
@@ -513,100 +483,89 @@
       letter-spacing: 0.04em;
     }
 
+    /* ダイヤルホイール本体 */
     .dial-wheel {
       position: relative;
-      width: 58px;
-      height: 108px;
+      width: 100%;
+      max-width: 68px;
+      height: 160px;
       overflow: hidden;
-      background: linear-gradient(180deg, #0a1a3a, #0e2248, #0a1a3a);
-      border-radius: 12px;
+      background: linear-gradient(180deg, #060d1e 0%, #091528 50%, #060d1e 100%);
+      border-radius: 14px;
       border: 2px solid var(--cyan);
       touch-action: none;
       user-select: none;
       cursor: ns-resize;
+      /* グラデーションマスクで上下をフェード（立体感演出） */
+      -webkit-mask-image: linear-gradient(to bottom,
+        transparent 0%,
+        rgba(0,0,0,0.55) 16%,
+        black 30%,
+        black 70%,
+        rgba(0,0,0,0.55) 84%,
+        transparent 100%);
+      mask-image: linear-gradient(to bottom,
+        transparent 0%,
+        rgba(0,0,0,0.55) 16%,
+        black 30%,
+        black 70%,
+        rgba(0,0,0,0.55) 84%,
+        transparent 100%);
     }
 
-    .dial-wheel::before,
-    .dial-wheel::after {
-      content: '';
-      position: absolute;
-      left: 0; right: 0;
-      height: 30px;
-      z-index: 2;
-      pointer-events: none;
-    }
-    .dial-wheel::before {
-      top: 0;
-      background: linear-gradient(180deg, rgba(10,26,58,0.95) 0%, transparent 100%);
-    }
-    .dial-wheel::after {
-      bottom: 0;
-      background: linear-gradient(0deg, rgba(10,26,58,0.95) 0%, transparent 100%);
-    }
-
+    /* 中央選択枠（ハイライト）*/
     .dial-highlight {
       position: absolute;
       top: 50%;
-      left: 4px; right: 4px;
-      height: 32px;
+      left: 5px; right: 5px;
+      height: 46px;               /* ITEM_H と合わせる */
       transform: translateY(-50%);
-      border: 2px solid var(--cyan);
-      border-radius: 6px;
+      border: 2px solid rgba(64,168,200,0.75);
+      border-radius: 8px;
+      background: rgba(64,168,200,0.07);
       pointer-events: none;
-      z-index: 3;
+      z-index: 5;
+      box-shadow: inset 0 0 8px rgba(64,168,200,0.10);
     }
 
+    /* アイテムコンテナ（仮想スクロール用） */
     .dial-inner {
       position: absolute;
-      top: 0; left: 0; right: 0;
-      transition: transform 0.08s ease-out;
-      will-change: transform;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
     }
 
-    .dial-item {
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 21px;
-      font-weight: 800;
-      font-family: monospace;
-      color: rgba(0, 200, 160, 0.45);
-      letter-spacing: 0;
-    }
-
-    .dial-item.selected {
-      color: #00ff88;
-      text-shadow: 0 0 6px rgba(0,255,136,0.38);
-    }
-
+    /* 合計表示 */
     .dial-total {
       text-align: center;
-      margin-top: 8px;
-      font-size: 18px;
+      margin-top: 10px;
+      font-size: 22px;
       font-weight: 800;
       color: var(--cyan-dk);
       letter-spacing: 2px;
       background: var(--cyan-lt);
       border: 2px solid var(--cyan);
       border-radius: var(--radius-xs);
-      padding: 7px;
+      padding: 8px;
     }
-
     .dial-total span {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text-mid);
       font-weight: 500;
       margin-left: 5px;
     }
 
+    /* 千百十一の区切り */
     .dial-sep {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 800;
-      color: var(--blue-lt);
-      padding-bottom: 12px;
+      color: rgba(200,216,248,0.5);
+      padding-top: 28px; /* unit-label(11px+4px gap) + partial alignment */
+      flex: 0 0 auto;
+      align-self: flex-start;
     }
 
+    /* ===== セレクト ===== */
     select {
       width: 100%;
       font-family: var(--font);
@@ -625,7 +584,6 @@
       cursor: pointer;
       font-weight: 500;
     }
-
     select:focus {
       border-color: var(--blue);
       box-shadow: 0 0 0 3px rgba(46,107,224,0.14);
@@ -664,20 +622,18 @@
       box-shadow: 0 4px 16px rgba(20,80,200,0.40);
       flex: 2;
     }
-
     .btn-register:disabled {
       opacity: 0.38;
       box-shadow: none;
       cursor: not-allowed;
       transform: none;
     }
-
     .btn-rescan {
       background: linear-gradient(135deg, var(--btn-re-from) 0%, var(--btn-re-to) 100%);
       box-shadow: 0 4px 14px rgba(20,120,160,0.38);
     }
 
-    /* ===== 登録完了モーダル ===== */
+    /* ===== モーダル ===== */
     #modalOverlay {
       display: none;
       position: fixed;
@@ -729,7 +685,7 @@
       text-align: center;
       box-shadow: 0 5px 22px rgba(0,0,0,0.25);
       z-index: 100;
-      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
       opacity: 0;
       pointer-events: none;
     }
@@ -773,7 +729,6 @@
 </head>
 <body>
 
-<!-- 登録完了モーダル -->
 <div id="modalOverlay">
   <div class="modal-box">
     <div class="modal-icon">✅</div>
@@ -785,7 +740,6 @@
 
 <div class="app-wrapper">
 
-  <!-- ヘッダー -->
   <header class="app-header">
     <h1>📦 棚 卸 ア プ リ</h1>
     <div class="subtitle" id="currentDate">読込中...</div>
@@ -797,7 +751,7 @@
       場所 ／ 担当者
       <span class="operator-lock-badge" id="lockBadge" style="display:none;">🔒 保持中</span>
     </div>
-    <button class="operator-clear-btn" onclick="clearOperator()" title="場所・担当者をクリア">クリア</button>
+    <button class="operator-clear-btn" onclick="clearOperator()">クリア</button>
     <div class="operator-row">
       <div class="operator-field">
         <label class="field-label" for="departmentSelect">場所</label>
@@ -817,7 +771,6 @@
   <!-- スキャンカード -->
   <div class="card scan-card" id="scanCard">
     <div class="card-label">OCR 図番読取</div>
-
     <div class="scan-square" id="scanSquare">
       <div class="qr-corner tl"></div>
       <div class="qr-corner tr"></div>
@@ -829,22 +782,15 @@
       <div class="scan-icon" id="scanIcon">🔍</div>
     </div>
     <div class="scan-label" id="scanLabel">🔍 下のボタンでOCR開始</div>
-
     <button id="btnCameraStart" class="btn-cam-start ocr-btn" onclick="startCamera()">
       🔍 OCRスキャン開始
     </button>
-
-    <button id="btnCameraStop" onclick="stopCamera()">
-      ⏹ カメラを停止
-    </button>
-
+    <button id="btnCameraStop" onclick="stopCamera()">⏹ カメラを停止</button>
     <div class="scan-hint" id="scanHint">🔍 ガイド枠に図番を合わせてください</div>
-
     <div id="ocrDebugWrap">
       <p>▼ OCRに送っている画像</p>
       <canvas id="ocrDebugCanvas"></canvas>
     </div>
-
     <div class="ocr-result-wrap visible" id="ocrResultWrap">
       <div class="ocr-part-label">読み取った図番</div>
       <input id="ocrPartInput" type="text" value="----" readonly
@@ -852,16 +798,15 @@
         oninput="onOcrPartEdit()" onblur="onOcrPartBlur()">
       <div class="ocr-part-hint" id="ocrPartHint">OCR読み取り後、手修正も可能です</div>
     </div>
-
     <button id="btnMasterSearch" class="btn-cam-start btn-master-search" onclick="doMasterSearch()" style="display:none;">
       🔎 マスタ検索
     </button>
   </div>
 
-  <!-- 登録情報エリア -->
+  <!-- 登録情報カード -->
   <div class="card" id="infoCard" style="position:relative;">
     <div class="card-label">登録情報</div>
-    <button class="operator-clear-btn" onclick="clearInfoCard()" title="登録情報をクリア">クリア</button>
+    <button class="operator-clear-btn" onclick="clearInfoCard()">クリア</button>
 
     <div style="margin-bottom:7px;">
       <span class="field-label">図番</span>
@@ -870,73 +815,66 @@
         oninput="onZunoManualInput(this)"
         onblur="onZunoManualBlur()">
     </div>
-
     <div style="margin-bottom:7px;">
       <span class="field-label">品名</span>
       <input type="text" id="hinmeiDisplay" class="field-value"
         placeholder="品名（マスタ検索で自動入力）"
         oninput="updateRegisterBtn()">
     </div>
-
     <div style="margin-bottom:7px;">
-      <span class="field-label">
-        製番
-        <span class="label-sub">（任意・9桁数字）</span>
-      </span>
+      <span class="field-label">製番<span class="label-sub">（任意・9桁数字）</span></span>
       <input type="text" id="seibanInput" class="field-value"
         placeholder="例: 012345678"
         maxlength="9"
         inputmode="numeric"
         oninput="this.value=this.value.replace(/[^0-9]/g,'');updateRegisterBtn()">
     </div>
-
-    <!-- サイズ（非表示） -->
     <div style="display:none;">
       <span class="field-label">サイズ</span>
       <div class="field-value" id="sizeDisplay">―</div>
     </div>
 
-    <!-- ダイヤル式数量入力 -->
+    <!-- ★ 改良ダイヤル数量入力 -->
     <div>
-      <span class="field-label">数量（ダイヤルで入力）</span>
-
+      <div class="dial-section-label">数量（ダイヤルで入力）</div>
       <div class="dial-container">
+        <!-- 千の位 -->
         <div class="dial-group">
           <div class="dial-unit-label">千</div>
-          <div class="dial-wheel" id="dial-1000" data-place="1000">
+          <div class="dial-wheel" id="dial-1000">
             <div class="dial-inner" id="dial-inner-1000"></div>
             <div class="dial-highlight"></div>
           </div>
         </div>
         <div class="dial-sep">·</div>
+        <!-- 百の位 -->
         <div class="dial-group">
           <div class="dial-unit-label">百</div>
-          <div class="dial-wheel" id="dial-100" data-place="100">
+          <div class="dial-wheel" id="dial-100">
             <div class="dial-inner" id="dial-inner-100"></div>
             <div class="dial-highlight"></div>
           </div>
         </div>
         <div class="dial-sep">·</div>
+        <!-- 十の位 -->
         <div class="dial-group">
           <div class="dial-unit-label">十</div>
-          <div class="dial-wheel" id="dial-10" data-place="10">
+          <div class="dial-wheel" id="dial-10">
             <div class="dial-inner" id="dial-inner-10"></div>
             <div class="dial-highlight"></div>
           </div>
         </div>
         <div class="dial-sep">·</div>
+        <!-- 一の位 -->
         <div class="dial-group">
           <div class="dial-unit-label">一</div>
-          <div class="dial-wheel" id="dial-1" data-place="1">
+          <div class="dial-wheel" id="dial-1">
             <div class="dial-inner" id="dial-inner-1"></div>
             <div class="dial-highlight"></div>
           </div>
         </div>
       </div>
-
-      <div class="dial-total" id="dialTotal">
-        0 <span>個</span>
-      </div>
+      <div class="dial-total" id="dialTotal">0 <span>個</span></div>
     </div>
 
     <!-- 在庫区分 -->
@@ -956,17 +894,323 @@
 
 </div>
 
-<!-- ローディング -->
 <div id="loading">
   <div class="spinner"></div>
   <div class="loading-text" id="loadingText">処理中...</div>
 </div>
-
-<!-- トースト -->
 <div id="toast"></div>
 
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxFYwYko8L09Ao3e9EhmknHbO1rJqfRpXZScMcNIVB4PiCMlQGNcW8DkqL-Cx1g311QFw/exec';
+
+/* ============================================================
+   ★ 改良ダイヤルシステム
+   - 仮想スクロール（無限ループ）
+   - 慣性スクロール + スナップアニメーション
+   - Web Audio でカチカチ音
+   - タップ上半分:-1 / タップ下半分:+1
+============================================================ */
+
+var ITEM_H  = 46;   // アイテム1個の高さ (px)
+var WHEEL_H = 160;  // ホイール全体の高さ (px)
+var DCENTER = WHEEL_H / 2 - ITEM_H / 2;  // 中央アイテムの top 座標 = 57
+
+// places 配列
+var PLACES = [1000, 100, 10, 1];
+
+// ダイヤル状態
+var _dPos = {};   // 連続浮動小数点位置（整数=値）
+var _dVel = {};   // 速度 (pos-unit / ms)
+var _dRaf = {};   // rAF ID
+var _dLastInt = {};  // 直前の整数位置（音用）
+
+// dialValues は後続の registerData 等で使う（互換維持）
+var dialValues = { 1000: 0, 100: 0, 10: 0, 1: 0 };
+
+PLACES.forEach(function(p) {
+  _dPos[p] = 0;
+  _dVel[p] = 0;
+  _dRaf[p] = null;
+  _dLastInt[p] = 0;
+});
+
+/* ---------- 音声 ---------- */
+var _audioCtx = null;
+
+function _initAudio() {
+  if (_audioCtx) return;
+  try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+}
+
+// 初回タッチ/クリックで AudioContext を初期化（iOS 制約対応）
+document.addEventListener('touchstart', _initAudio, { once: true, passive: true });
+document.addEventListener('mousedown',  _initAudio, { once: true, passive: true });
+
+function _playTick() {
+  if (!_audioCtx) return;
+  try {
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    var t   = _audioCtx.currentTime;
+    var sr  = _audioCtx.sampleRate;
+    var len = Math.floor(sr * 0.018);  // 18ms のノイズバースト
+
+    var buf  = _audioCtx.createBuffer(1, len, sr);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) {
+      // 指数減衰するホワイトノイズ → メカニカルクリック音
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.18));
+    }
+
+    var src  = _audioCtx.createBufferSource();
+    src.buffer = buf;
+
+    // ハイパスフィルタでカチカチ感を強調
+    var hp = _audioCtx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 2200;
+
+    var gain = _audioCtx.createGain();
+    gain.gain.value = 0.55;
+
+    src.connect(hp); hp.connect(gain); gain.connect(_audioCtx.destination);
+    src.start(t);
+  } catch(e) {}
+}
+
+/* ---------- 描画 ---------- */
+function _dRender(place) {
+  var pos   = _dPos[place];
+  var inner = document.getElementById('dial-inner-' + place);
+  inner.innerHTML = '';
+
+  var startI = Math.floor(pos) - 3;
+  var endI   = Math.ceil(pos)  + 3;
+
+  for (var i = startI; i <= endI; i++) {
+    var val  = ((i % 10) + 10) % 10;
+    var dist = i - pos;             // 中央からの距離（小数）
+    var y    = DCENTER + dist * ITEM_H;
+
+    // 描画範囲外はスキップ
+    if (y < -ITEM_H || y > WHEEL_H + ITEM_H) continue;
+
+    var absD    = Math.abs(dist);
+    var scale   = Math.max(0.60, 1 - absD * 0.175);
+    var opacity = Math.max(0.18, 1 - absD * 0.48);
+    var fsize   = absD < 0.5 ? 34 : (absD < 1.5 ? 23 : 16);
+    var color   = absD < 0.5
+      ? '#00ff88'
+      : 'rgba(64,168,200,' + opacity.toFixed(2) + ')';
+
+    var el = document.createElement('div');
+    el.style.cssText =
+      'position:absolute;left:0;right:0;height:' + ITEM_H + 'px;' +
+      'top:' + y.toFixed(1) + 'px;' +
+      'display:flex;align-items:center;justify-content:center;' +
+      'font-family:monospace;font-weight:900;' +
+      'font-size:' + fsize + 'px;' +
+      'color:' + color + ';' +
+      'transform:scale(' + scale.toFixed(3) + ');' +
+      'pointer-events:none;';
+    el.textContent = val;
+    inner.appendChild(el);
+  }
+
+  // 整数位置が変わったとき → 音 + dialValues 更新
+  var intPos = Math.round(pos);
+  if (intPos !== _dLastInt[place]) {
+    _dLastInt[place] = intPos;
+    _playTick();
+    if (navigator.vibrate) navigator.vibrate(8);
+    dialValues[place] = ((intPos % 10) + 10) % 10;
+    renderDialTotal();
+    updateRegisterBtn();
+  }
+}
+
+/* ---------- 値セット（リセット・復元用） ---------- */
+function _dSetVal(place, val) {
+  if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
+  val = ((val % 10) + 10) % 10;
+  _dPos[place] = val;
+  _dLastInt[place] = val;
+  dialValues[place] = val;
+  _dRender(place);
+}
+
+/* ---------- スナップアニメーション ---------- */
+function _dSnap(place) {
+  if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
+  var target = Math.round(_dPos[place]);
+  var start  = _dPos[place];
+  var t0     = performance.now();
+  var dur    = 130;  // ms
+
+  function step(now) {
+    var t = Math.min(1, (now - t0) / dur);
+    var e = 1 - (1 - t) * (1 - t) * (1 - t);  // ease-out cubic
+    _dPos[place] = start + (target - start) * e;
+    _dRender(place);
+    if (t < 1) {
+      _dRaf[place] = requestAnimationFrame(step);
+    } else {
+      _dPos[place] = target;
+      dialValues[place] = ((target % 10) + 10) % 10;
+      renderDialTotal();
+      updateRegisterBtn();
+    }
+  }
+  _dRaf[place] = requestAnimationFrame(step);
+}
+
+/* ---------- 慣性スクロール ---------- */
+function _dMomentum(place, vel) {
+  if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
+  var FRICTION = 0.89;
+  var MIN_VEL  = 0.0015;
+
+  function step() {
+    vel *= FRICTION;
+    _dPos[place] += vel * 16.67;
+    _dRender(place);
+    if (Math.abs(vel) > MIN_VEL) {
+      _dRaf[place] = requestAnimationFrame(step);
+    } else {
+      _dSnap(place);
+    }
+  }
+  _dRaf[place] = requestAnimationFrame(step);
+}
+
+/* ---------- ドラッグバインド ---------- */
+function _bindDial(place) {
+  var wheel = document.getElementById('dial-' + place);
+  // ← 後述の初期化で dial-{place} ではなく dial-inner の親を取る
+  wheel = document.getElementById('dial-' + place);
+
+  var startY = 0, startPos = 0;
+  var lastY  = 0, lastTime = 0, vel = 0;
+  var isDrag = false;
+  var tapThreshold = 6;  // px 以下はタップ扱い
+  var moved = 0;
+
+  function onStart(cy) {
+    _initAudio();
+    if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
+    isDrag   = true;
+    startY   = cy;
+    startPos = _dPos[place];
+    lastY    = cy;
+    lastTime = Date.now();
+    vel      = 0;
+    moved    = 0;
+  }
+
+  function onMove(cy) {
+    if (!isDrag) return;
+    var now = Date.now();
+    var dt  = Math.max(1, now - lastTime);
+    // 上にスワイプ → cy 減少 → pos 増加（値が増える）
+    vel     = -(cy - lastY) / dt / ITEM_H;
+    lastY   = cy;
+    lastTime = now;
+    moved   = Math.abs(cy - startY);
+    _dPos[place] = startPos - (cy - startY) / ITEM_H;
+    _dRender(place);
+  }
+
+  function onEnd(cy, wheelEl) {
+    if (!isDrag) return;
+    isDrag = false;
+
+    if (moved < tapThreshold) {
+      // タップ判定: ホイールの上半分 → -1, 下半分 → +1
+      var rect = wheelEl.getBoundingClientRect();
+      var relY = cy - rect.top;
+      var delta = relY < WHEEL_H / 2 ? -1 : 1;
+      _dPos[place] = Math.round(_dPos[place]) + delta;
+      _dRender(place);
+      _dSnap(place);
+    } else if (Math.abs(vel) > 0.005) {
+      _dMomentum(place, vel);
+    } else {
+      _dSnap(place);
+    }
+  }
+
+  // タッチイベント
+  wheel.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    onStart(e.touches[0].clientY);
+  }, { passive: false });
+
+  wheel.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    onMove(e.touches[0].clientY);
+  }, { passive: false });
+
+  wheel.addEventListener('touchend', function(e) {
+    var cy = e.changedTouches[0].clientY;
+    onEnd(cy, wheel);
+  });
+
+  // マウスイベント（PC テスト用）
+  var mdrag = false;
+  wheel.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    mdrag = true;
+    onStart(e.clientY);
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (mdrag) onMove(e.clientY);
+  });
+  document.addEventListener('mouseup', function(e) {
+    if (mdrag) { mdrag = false; onEnd(e.clientY, wheel); }
+  });
+
+  // ホイールスクロール
+  wheel.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    _initAudio();
+    if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
+    _dPos[place] += e.deltaY > 0 ? 1 : -1;
+    _dRender(place);
+    _dSnap(place);
+  }, { passive: false });
+}
+
+/* ---------- 初期化（旧 initDials 相当） ---------- */
+function initDials() {
+  PLACES.forEach(function(p) {
+    _dSetVal(p, 0);
+    _bindDial(p);
+  });
+  renderDialTotal();
+}
+
+/* ---------- リセット（旧 resetDials 相当） ---------- */
+function resetDials() {
+  PLACES.forEach(function(p) { _dSetVal(p, 0); });
+  renderDialTotal();
+}
+
+/* ---------- 合計値取得（変わらず） ---------- */
+function getDialTotal() {
+  return dialValues[1000] * 1000
+       + dialValues[100]  * 100
+       + dialValues[10]   * 10
+       + dialValues[1];
+}
+
+function renderDialTotal() {
+  var total = getDialTotal();
+  document.getElementById('dialTotal').innerHTML =
+    '<strong>' + total.toLocaleString() + '</strong> <span>個</span>';
+}
+
+/* ============================================================
+   以下、既存コードそのまま（GAS通信・登録・カメラ・その他）
+============================================================ */
 
 var cameraStream  = null;
 var cameraActive  = false;
@@ -975,13 +1219,6 @@ var ocrRunning    = false;
 var currentZuno   = null;
 var currentHinmei = '';
 var currentSize   = '';
-
-var dialValues = { 1000: 0, 100: 0, 10: 0, 1: 0 };
-
-/* ===== ダイヤル定数（CSS変更に合わせて更新） ===== */
-var ITEM_H = 32;   // dial-item の height（CSS と一致）
-var WHEEL_H = 108; // dial-wheel の height（CSS と一致）
-var PAD = 2;
 
 window.addEventListener('load', function () {
   updateDateTime();
@@ -1000,9 +1237,6 @@ function updateDateTime() {
     '  ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
 }
 
-/* ============================================================
-   GAS通信共通関数
-============================================================ */
 function callGAS(action, params) {
   return new Promise(function(resolve, reject) {
     var isGet = (action === 'getMaster' || action === 'lookup' || action === 'getPersonnel');
@@ -1012,26 +1246,18 @@ function callGAS(action, params) {
         qs += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
       });
       fetch(GAS_URL + '?' + qs, { method: 'GET' })
-        .then(function(r){ return r.json(); })
-        .then(resolve)
-        .catch(reject);
+        .then(function(r){ return r.json(); }).then(resolve).catch(reject);
     } else {
       var body = Object.assign({ action: action }, params || {});
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(body)
-      })
-        .then(function(r){ return r.json(); })
-        .then(resolve)
-        .catch(reject);
+      }).then(function(r){ return r.json(); }).then(resolve).catch(reject);
     }
   });
 }
 
-/* ============================================================
-   マスタデータ取得
-============================================================ */
 function loadMasterData() {
   callGAS('getMaster', {})
     .then(function(data){
@@ -1039,9 +1265,7 @@ function loadMasterData() {
       fillSelect('inventoryTypeSelect', data.inventoryTypes || []);
       restoreOperator();
     })
-    .catch(function(){
-      showToast('⚠️ マスタデータ取得失敗。URLを確認してください', 'error');
-    });
+    .catch(function(){ showToast('⚠️ マスタデータ取得失敗', 'error'); });
 }
 
 function fillSelect(id, items) {
@@ -1054,27 +1278,15 @@ function fillSelect(id, items) {
   });
 }
 
-/* ============================================================
-   場所選択時に担当者リストを動的ロード
-============================================================ */
-var savedDept   = '';
-var savedPerson = '';
+var savedDept = '', savedPerson = '';
 
 function onDepartmentChange() {
-  savedDept   = document.getElementById('departmentSelect').value;
+  savedDept = document.getElementById('departmentSelect').value;
   savedPerson = '';
-
-  try {
-    sessionStorage.setItem('inv_dept', savedDept);
-    sessionStorage.removeItem('inv_person');
-  } catch(e){}
-
+  try { sessionStorage.setItem('inv_dept', savedDept); sessionStorage.removeItem('inv_person'); } catch(e){}
   var sel = document.getElementById('personnelSelect');
   sel.innerHTML = '<option value="">― 選択 ―</option>';
-
-  updateLockBadge();
-  updateRegisterBtn();
-
+  updateLockBadge(); updateRegisterBtn();
   if (!savedDept) return;
   loadPersonnelForDept(savedDept, '');
 }
@@ -1087,25 +1299,17 @@ function loadPersonnelForDept(dept, restoreValue) {
       if (restoreValue) {
         var sel = document.getElementById('personnelSelect');
         sel.value = restoreValue;
-        if (sel.value === restoreValue) {
-          savedPerson = restoreValue;
-        }
+        if (sel.value === restoreValue) savedPerson = restoreValue;
       }
-      updateLockBadge();
-      updateRegisterBtn();
+      updateLockBadge(); updateRegisterBtn();
     })
-    .catch(function() {
-      showToast('⚠️ 担当者データの取得に失敗しました', 'error');
-    });
+    .catch(function(){ showToast('⚠️ 担当者データの取得に失敗しました', 'error'); });
 }
 
 function onPersonnelChange() {
   savedPerson = document.getElementById('personnelSelect').value;
-  try {
-    sessionStorage.setItem('inv_person', savedPerson);
-  } catch(e){}
-  updateLockBadge();
-  updateRegisterBtn();
+  try { sessionStorage.setItem('inv_person', savedPerson); } catch(e){}
+  updateLockBadge(); updateRegisterBtn();
 }
 
 function restoreOperator() {
@@ -1117,10 +1321,7 @@ function restoreOperator() {
       var sel = document.getElementById('departmentSelect');
       if (sel) {
         sel.value = dept;
-        if (sel.value === dept && dept) {
-          savedPerson = person;
-          loadPersonnelForDept(dept, person);
-        }
+        if (sel.value === dept) { savedPerson = person; loadPersonnelForDept(dept, person); }
       }
     }
   } catch(e){}
@@ -1130,14 +1331,9 @@ function restoreOperator() {
 function clearOperator() {
   savedDept = ''; savedPerson = '';
   document.getElementById('departmentSelect').value = '';
-  var sel = document.getElementById('personnelSelect');
-  sel.innerHTML = '<option value="">― 選択 ―</option>';
-  try {
-    sessionStorage.removeItem('inv_dept');
-    sessionStorage.removeItem('inv_person');
-  } catch(e){}
-  updateLockBadge();
-  updateRegisterBtn();
+  document.getElementById('personnelSelect').innerHTML = '<option value="">― 選択 ―</option>';
+  try { sessionStorage.removeItem('inv_dept'); sessionStorage.removeItem('inv_person'); } catch(e){}
+  updateLockBadge(); updateRegisterBtn();
   showToast('🔓 場所・担当者をクリアしました', 'updated');
 }
 
@@ -1148,27 +1344,21 @@ function updateLockBadge() {
   badge.style.display = (dept || person) ? '' : 'none';
 }
 
-/* ============================================================
-   手入力モード制御
-============================================================ */
 function setManualInputEnabled(enabled) {
-  var zunoInp   = document.getElementById('zunoDisplay');
-  var hinmeiInp = document.getElementById('hinmeiDisplay');
+  var zi = document.getElementById('zunoDisplay');
+  var hi = document.getElementById('hinmeiDisplay');
   if (enabled) {
-    zunoInp.removeAttribute('readonly');
-    hinmeiInp.removeAttribute('readonly');
-    zunoInp.placeholder   = '図番を直接入力できます';
-    hinmeiInp.placeholder = '品名（マスタ検索で自動入力）';
+    zi.removeAttribute('readonly'); hi.removeAttribute('readonly');
+    zi.placeholder = '図番を直接入力できます';
+    hi.placeholder = '品名（マスタ検索で自動入力）';
   } else {
-    zunoInp.setAttribute('readonly', true);
-    hinmeiInp.setAttribute('readonly', true);
+    zi.setAttribute('readonly', true); hi.setAttribute('readonly', true);
   }
 }
 
 function onZunoManualInput(inp) {
   inp.value = inp.value.replace(/[^A-Za-z0-9\-]/g, '').toUpperCase();
-  currentZuno = null;
-  updateRegisterBtn();
+  currentZuno = null; updateRegisterBtn();
 }
 
 function onZunoManualBlur() {
@@ -1177,183 +1367,40 @@ function onZunoManualBlur() {
   if (!code) return;
   showLoading(true, 'マスタ検索中…');
   callGAS('lookup', { barcode: code })
-    .then(function(d) { showLoading(false); applyLookupResult(d); })
-    .catch(function(e) { showLoading(false); showToast('❌ 検索エラー: ' + e.message, 'error'); });
+    .then(function(d){ showLoading(false); applyLookupResult(d); })
+    .catch(function(e){ showLoading(false); showToast('❌ 検索エラー: ' + e.message, 'error'); });
 }
 
 function clearInfoCard() {
   currentZuno = null; currentHinmei = ''; currentSize = '';
-
-  var zunoInp   = document.getElementById('zunoDisplay');
-  var hinmeiInp = document.getElementById('hinmeiDisplay');
-  zunoInp.value   = '';
-  hinmeiInp.value = '';
-  zunoInp.className   = 'field-value';
-  hinmeiInp.className = 'field-value';
-
+  var zi = document.getElementById('zunoDisplay');
+  var hi = document.getElementById('hinmeiDisplay');
+  zi.value = ''; hi.value = '';
+  zi.className = 'field-value'; hi.className = 'field-value';
   document.getElementById('seibanInput').value = '';
-
-  var sizeEl = document.getElementById('sizeDisplay');
-  sizeEl.textContent = '―';
-  sizeEl.className   = 'field-value';
-
+  var se = document.getElementById('sizeDisplay');
+  se.textContent = '―'; se.className = 'field-value';
   resetDials();
   document.getElementById('inventoryTypeSelect').value = '';
   document.getElementById('registerBtn').disabled = true;
   showToast('🗑️ 登録情報をクリアしました', 'updated');
 }
 
-/* ============================================================
-   ダイヤル
-============================================================ */
-function initDials() {
-  [1000, 100, 10, 1].forEach(function(place) {
-    buildDial(place);
-    bindDialEvents(place);
-  });
-  renderDialTotal();
-}
-
-function buildDial(place) {
-  var inner = document.getElementById('dial-inner-' + place);
-  inner.innerHTML = '';
-  for (var i = 0; i < PAD; i++) {
-    var d = document.createElement('div');
-    d.className = 'dial-item';
-    inner.appendChild(d);
-  }
-  for (var v = 0; v <= 9; v++) {
-    var item = document.createElement('div');
-    item.className = 'dial-item';
-    item.textContent = v;
-    inner.appendChild(item);
-  }
-  for (var j = 0; j < PAD; j++) {
-    var d2 = document.createElement('div');
-    d2.className = 'dial-item';
-    inner.appendChild(d2);
-  }
-  setDialValue(place, 0, false);
-}
-
-function setDialValue(place, val, animate) {
-  val = ((val % 10) + 10) % 10;
-  dialValues[place] = val;
-  var inner = document.getElementById('dial-inner-' + place);
-  var offset = -((PAD + val) * ITEM_H) + (WHEEL_H / 2 - ITEM_H / 2);
-  if (!animate) {
-    inner.style.transition = 'none';
-  } else {
-    inner.style.transition = 'transform 0.18s ease-out';
-  }
-  inner.style.transform = 'translateY(' + offset + 'px)';
-  var items = inner.querySelectorAll('.dial-item');
-  items.forEach(function(item, idx) {
-    item.classList.toggle('selected', idx === PAD + val);
-  });
-  renderDialTotal();
-}
-
-function bindDialEvents(place) {
-  var wheel = document.getElementById('dial-' + place);
-  var startY = 0;
-  var startVal = 0;
-  var dragging = false;
-
-  wheel.addEventListener('touchstart', function(e) {
-    e.preventDefault();
-    startY   = e.touches[0].clientY;
-    startVal = dialValues[place];
-    dragging = true;
-  }, { passive: false });
-
-  wheel.addEventListener('touchmove', function(e) {
-    if (!dragging) return;
-    e.preventDefault();
-    var dy    = startY - e.touches[0].clientY;
-    var delta = Math.round(dy / ITEM_H);
-    setDialValue(place, startVal + delta, false);
-    updateRegisterBtn();
-  }, { passive: false });
-
-  wheel.addEventListener('touchend', function(e) {
-    dragging = false;
-    updateRegisterBtn();
-  });
-
-  wheel.addEventListener('mousedown', function(e) {
-    e.preventDefault();
-    startY   = e.clientY;
-    startVal = dialValues[place];
-    dragging = true;
-  });
-
-  document.addEventListener('mousemove', function(e) {
-    if (!dragging) return;
-    var dy    = startY - e.clientY;
-    var delta = Math.round(dy / ITEM_H);
-    setDialValue(place, startVal + delta, false);
-    updateRegisterBtn();
-  });
-
-  document.addEventListener('mouseup', function() {
-    dragging = false;
-  });
-
-  wheel.addEventListener('wheel', function(e) {
-    e.preventDefault();
-    var delta = e.deltaY > 0 ? 1 : -1;
-    setDialValue(place, dialValues[place] + delta, true);
-    updateRegisterBtn();
-  }, { passive: false });
-}
-
-function getDialTotal() {
-  return dialValues[1000] * 1000
-       + dialValues[100]  * 100
-       + dialValues[10]   * 10
-       + dialValues[1];
-}
-
-function renderDialTotal() {
-  var total = getDialTotal();
-  document.getElementById('dialTotal').innerHTML =
-    '<strong>' + total.toLocaleString() + '</strong> <span>個</span>';
-}
-
-function resetDials() {
-  [1000, 100, 10, 1].forEach(function(place) {
-    setDialValue(place, 0, false);
-  });
-  renderDialTotal();
-}
-
-/* ============================================================
-   カメラ制御
-============================================================ */
 function startCamera() {
   if (cameraActive) return;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    showToast('❌ このブラウザはカメラに対応していません', 'error');
-    return;
+    showToast('❌ このブラウザはカメラに対応していません', 'error'); return;
   }
   navigator.mediaDevices.getUserMedia({
-    video: {
-      facingMode: { ideal: 'environment' },
-      width:  { ideal: 1280 },
-      height: { ideal: 720 }
-    }
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
   })
   .then(function(stream){
-    cameraStream = stream;
-    cameraActive = true;
-    var video  = document.getElementById('cameraVideo');
-    var square = document.getElementById('scanSquare');
-    video.srcObject = stream;
-    video.style.display = 'block';
+    cameraStream = stream; cameraActive = true;
+    var video = document.getElementById('cameraVideo');
+    video.srcObject = stream; video.style.display = 'block';
     document.getElementById('btnCameraStart').style.display = 'none';
     document.getElementById('btnCameraStop').style.display  = 'flex';
-    square.className = 'scan-square camera-on mode-ocr';
+    document.getElementById('scanSquare').className = 'scan-square camera-on mode-ocr';
     document.getElementById('ocrGuide').style.display = 'block';
     document.getElementById('scanLabel').textContent  = '🔍 ガイド枠に図番を合わせてください';
     document.getElementById('scanHint').textContent   = '🔍 2秒ごとに自動OCR解析中…';
@@ -1362,7 +1409,7 @@ function startCamera() {
   })
   .catch(function(err){
     var msg = 'カメラを起動できませんでした';
-    if (err.name === 'NotAllowedError')   msg = 'カメラのアクセスが拒否されました。設定から許可してください。';
+    if (err.name === 'NotAllowedError')   msg = 'カメラのアクセスが拒否されました。';
     if (err.name === 'NotFoundError')     msg = 'カメラが見つかりません。';
     if (err.name === 'NotSupportedError') msg = 'HTTPS環境が必要です。';
     showToast('❌ ' + msg, 'error');
@@ -1371,14 +1418,10 @@ function startCamera() {
 
 function stopCamera() {
   clearInterval(ocrTimer); ocrTimer = null;
-  if (cameraStream){
-    cameraStream.getTracks().forEach(function(t){ t.stop(); });
-    cameraStream = null;
-  }
+  if (cameraStream) { cameraStream.getTracks().forEach(function(t){ t.stop(); }); cameraStream = null; }
   var video = document.getElementById('cameraVideo');
-  video.srcObject = null;
-  video.style.display = 'none';
-  document.getElementById('ocrGuide').style.display   = 'none';
+  video.srcObject = null; video.style.display = 'none';
+  document.getElementById('ocrGuide').style.display = 'none';
   document.getElementById('btnCameraStart').style.display = '';
   document.getElementById('btnCameraStop').style.display  = 'none';
   document.getElementById('scanSquare').className = 'scan-square';
@@ -1405,8 +1448,7 @@ function doOcrTick() {
     .then(function(data){
       guide.classList.remove('scanning');
       if (data.part) {
-        stopCamera();
-        setOcrResult(data.part);
+        stopCamera(); setOcrResult(data.part);
         showToast('✅ 図番を読み取りました。確認後にマスタ検索してください', 'success');
       } else if (data.rawText && data.rawText.trim()) {
         var rv = data.rawText.replace(/\n/g, ' ').trim();
@@ -1414,8 +1456,7 @@ function doOcrTick() {
         setOcrResult(rv.replace(/[\s\-]/g, '').substring(0, 30));
         document.getElementById('ocrPartInput').className = 'editing';
         document.getElementById('ocrPartHint').textContent = '図番部分を残して修正し、マスタ検索してください';
-        stopCamera();
-        updateRegisterBtn();
+        stopCamera(); updateRegisterBtn();
       } else {
         showToast('📷 図番が読み取れません。明るい場所で枠に合わせてください', 'info');
       }
@@ -1437,26 +1478,20 @@ function captureOcr() {
   var ratioY = (gr.top  - vrect.top)  / vrect.height;
   var ratioW = gr.width  / vrect.width;
   var ratioH = gr.height / vrect.height;
-  var dispAspect  = vrect.width / vrect.height;
+  var dispAspect = vrect.width / vrect.height;
   var videoAspect = vw / vh;
   var coverScale, coverOffX, coverOffY;
   if (videoAspect > dispAspect) {
-    coverScale = vrect.height / vh;
-    coverOffX  = (vw * coverScale - vrect.width) / 2;
-    coverOffY  = 0;
+    coverScale = vrect.height / vh; coverOffX = (vw * coverScale - vrect.width) / 2; coverOffY = 0;
   } else {
-    coverScale = vrect.width / vw;
-    coverOffX  = 0;
-    coverOffY  = (vh * coverScale - vrect.height) / 2;
+    coverScale = vrect.width / vw; coverOffX = 0; coverOffY = (vh * coverScale - vrect.height) / 2;
   }
   var sx = Math.round((ratioX * vrect.width  + coverOffX) / coverScale);
   var sy = Math.round((ratioY * vrect.height + coverOffY) / coverScale);
   var sw = Math.round(ratioW * vrect.width  / coverScale);
   var sh = Math.round(ratioH * vrect.height / coverScale);
-  sx = Math.max(0, Math.min(vw - 1, sx));
-  sy = Math.max(0, Math.min(vh - 1, sy));
-  sw = Math.max(1, Math.min(vw - sx, sw));
-  sh = Math.max(1, Math.min(vh - sy, sh));
+  sx = Math.max(0, Math.min(vw-1, sx)); sy = Math.max(0, Math.min(vh-1, sy));
+  sw = Math.max(1, Math.min(vw-sx, sw)); sh = Math.max(1, Math.min(vh-sy, sh));
   var crop = document.createElement('canvas');
   crop.width = sw; crop.height = sh;
   crop.getContext('2d').drawImage(full, sx, sy, sw, sh, 0, 0, sw, sh);
@@ -1464,8 +1499,7 @@ function captureOcr() {
   if (crop.width > MAX || crop.height > MAX) {
     var r = Math.min(MAX / crop.width, MAX / crop.height);
     out = document.createElement('canvas');
-    out.width  = Math.round(crop.width  * r);
-    out.height = Math.round(crop.height * r);
+    out.width = Math.round(crop.width * r); out.height = Math.round(crop.height * r);
     out.getContext('2d').drawImage(crop, 0, 0, out.width, out.height);
   }
   var dbgWrap = document.getElementById('ocrDebugWrap');
@@ -1476,22 +1510,15 @@ function captureOcr() {
   return out.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
 }
 
-/* ============================================================
-   OCR結果セット
-============================================================ */
 function setOcrResult(code) {
   code = code.replace(/[\s\-]/g, '');
   var inp = document.getElementById('ocrPartInput');
-  inp.value = code.toUpperCase();
-  inp.removeAttribute('readonly');
-  inp.className = '';
+  inp.value = code.toUpperCase(); inp.removeAttribute('readonly'); inp.className = '';
   document.getElementById('ocrPartHint').textContent = '修正が必要な場合は直接編集し、マスタ検索してください';
   document.getElementById('ocrResultWrap').classList.add('visible');
   document.getElementById('btnMasterSearch').style.display = 'flex';
-
-  var zunoInp = document.getElementById('zunoDisplay');
-  zunoInp.value     = code.toUpperCase();
-  zunoInp.className = 'field-value';
+  var zi = document.getElementById('zunoDisplay');
+  zi.value = code.toUpperCase(); zi.className = 'field-value';
 }
 
 function onOcrPartEdit() {
@@ -1502,125 +1529,90 @@ function onOcrPartEdit() {
 }
 
 function onOcrPartBlur() {
-  var inp  = document.getElementById('ocrPartInput');
+  var inp = document.getElementById('ocrPartInput');
   var code = inp.value.replace(/[\s\-]/g, '').trim().toUpperCase();
   if (!code || code === '----') return;
-  inp.className = '';
-  inp.value = code;
+  inp.className = ''; inp.value = code;
   document.getElementById('ocrPartHint').textContent = '修正完了 — マスタ検索ボタンを押してください';
 }
 
 function doMasterSearch() {
   var inp  = document.getElementById('ocrPartInput');
   var code = inp.value.replace(/[\s\-]/g, '').trim().toUpperCase();
-  if (!code || code === '----') {
-    showToast('⚠️ 図番を入力してください', 'error');
-    return;
-  }
-  inp.value = code;
-  inp.className = '';
+  if (!code || code === '----') { showToast('⚠️ 図番を入力してください', 'error'); return; }
+  inp.value = code; inp.className = '';
   showLoading(true, 'マスタ検索中…');
   callGAS('lookup', { barcode: code })
     .then(function(d){ showLoading(false); applyLookupResult(d); })
     .catch(function(e){ showLoading(false); showToast('❌ 検索エラー: ' + e.message, 'error'); });
 }
 
-/* ============================================================
-   マスタ検索結果を画面に反映
-============================================================ */
 function applyLookupResult(result) {
-  var zuno     = result.zuno    || result.part  || '';
-  var hinmei   = result.hinmei || result.name  || '';
-  var size     = result.size   || '';
+  var zuno    = result.zuno   || result.part || '';
+  var hinmei  = result.hinmei || result.name || '';
+  var size    = result.size   || '';
   var inMaster = (result.inMaster !== undefined)
     ? result.inMaster
     : (result.success && hinmei && hinmei !== '（マスタ未登録）');
 
-  currentZuno   = zuno.toUpperCase();
-  currentHinmei = hinmei;
-  currentSize   = size;
+  currentZuno = zuno.toUpperCase(); currentHinmei = hinmei; currentSize = size;
 
-  var zunoInp   = document.getElementById('zunoDisplay');
-  var hinmeiInp = document.getElementById('hinmeiDisplay');
-  var sizeEl    = document.getElementById('sizeDisplay');
+  var zi = document.getElementById('zunoDisplay');
+  var hi = document.getElementById('hinmeiDisplay');
+  var se = document.getElementById('sizeDisplay');
 
-  zunoInp.value     = currentZuno;
-  zunoInp.className = 'field-value' + (currentZuno ? ' filled' : '');
-
-  hinmeiInp.value     = inMaster ? (hinmei || '') : (hinmei !== '（マスタ未登録）' ? hinmei : '');
-  hinmeiInp.className = 'field-value' + (inMaster ? ' filled' : ' warn');
-  hinmeiInp.placeholder = inMaster ? '品名（マスタ検索で自動入力）' : '（マスタ未登録 — 手入力可）';
-
-  sizeEl.textContent = size || '―';
-  sizeEl.className   = 'field-value' + (inMaster ? ' filled' : ' warn');
+  zi.value = currentZuno; zi.className = 'field-value' + (currentZuno ? ' filled' : '');
+  hi.value = inMaster ? (hinmei || '') : (hinmei !== '（マスタ未登録）' ? hinmei : '');
+  hi.className = 'field-value' + (inMaster ? ' filled' : ' warn');
+  hi.placeholder = inMaster ? '品名（マスタ検索で自動入力）' : '（マスタ未登録 — 手入力可）';
+  se.textContent = size || '―'; se.className = 'field-value' + (inMaster ? ' filled' : ' warn');
 
   var inp = document.getElementById('ocrPartInput');
-  inp.value = currentZuno;
-  inp.className = inMaster ? '' : 'notfound';
+  inp.value = currentZuno; inp.className = inMaster ? '' : 'notfound';
   document.getElementById('ocrPartHint').textContent = inMaster
     ? '✅ マスタ確認済 — 数量ダイヤルを合わせてください'
     : '⚠️ マスタ未登録 — 数量入力後に手動登録できます';
 
   showToast(inMaster ? '✅ 読取完了！数量ダイヤルを合わせてください' : '⚠️ マスタ未登録の図番です',
             inMaster ? 'success' : 'updated');
-
   updateRegisterBtn();
 }
 
-/* ============================================================
-   登録ボタン有効化チェック
-============================================================ */
 function updateRegisterBtn() {
   var zuno  = document.getElementById('zunoDisplay').value.trim();
   var qty   = getDialTotal();
   var dept  = document.getElementById('departmentSelect').value;
   var pers  = document.getElementById('personnelSelect').value;
   var itype = document.getElementById('inventoryTypeSelect').value;
-  document.getElementById('registerBtn').disabled =
-    !(zuno && qty >= 0 && dept && pers && itype);
+  document.getElementById('registerBtn').disabled = !(zuno && qty >= 0 && dept && pers && itype);
 }
 
-/* ============================================================
-   棚卸データ登録
-============================================================ */
 function registerData() {
   var now = new Date();
   var pad = function(n){ return String(n).padStart(2,'0'); };
-  var qty    = getDialTotal();
-  var zuno   = document.getElementById('zunoDisplay').value.trim().toUpperCase();
-  var hinmei = document.getElementById('hinmeiDisplay').value.trim() || currentHinmei;
-  var seiban = document.getElementById('seibanInput').value.trim();
-
   var data = {
     date:          now.getFullYear() + '/' + pad(now.getMonth()+1) + '/' + pad(now.getDate()),
     time:          pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()),
-    zuno:          zuno,
-    seiban:        seiban,
-    hinmei:        hinmei,
+    zuno:          document.getElementById('zunoDisplay').value.trim().toUpperCase(),
+    seiban:        document.getElementById('seibanInput').value.trim(),
+    hinmei:        document.getElementById('hinmeiDisplay').value.trim() || currentHinmei,
     size:          currentSize,
-    quantity:      qty,
+    quantity:      getDialTotal(),
     department:    document.getElementById('departmentSelect').value,
     personnel:     document.getElementById('personnelSelect').value,
     inventoryType: document.getElementById('inventoryTypeSelect').value
   };
-
   showLoading(true, '登録中…');
   callGAS('register', data)
     .then(function(result){
       showLoading(false);
       if (result.success) {
-        openModal(
-          '登録しました！',
-          (result.updated ? '（既存データを上書きしました）' : '（新規登録）')
-        );
+        openModal('登録しました！', result.updated ? '（既存データを上書きしました）' : '（新規登録）');
       } else {
         showToast('❌ ' + result.message, 'error');
       }
     })
-    .catch(function(){
-      showLoading(false);
-      showToast('❌ 通信エラー。GAS URLを確認してください', 'error');
-    });
+    .catch(function(){ showLoading(false); showToast('❌ 通信エラー', 'error'); });
 }
 
 function openModal(msg, sub) {
@@ -1634,39 +1626,28 @@ function closeModal() {
   resetAll();
 }
 
-/* ============================================================
-   全リセット
-============================================================ */
 function resetAll() {
   if (cameraActive) stopCamera();
   currentZuno = null; currentHinmei = ''; currentSize = '';
 
   var ocrInp = document.getElementById('ocrPartInput');
-  ocrInp.value = '----';
-  ocrInp.className = '';
-  ocrInp.setAttribute('readonly', true);
+  ocrInp.value = '----'; ocrInp.className = ''; ocrInp.setAttribute('readonly', true);
   document.getElementById('ocrPartHint').textContent = 'OCR読み取り後、手修正も可能です';
   document.getElementById('ocrDebugWrap').style.display = 'none';
   document.getElementById('btnMasterSearch').style.display = 'none';
 
-  var zunoInp   = document.getElementById('zunoDisplay');
-  var hinmeiInp = document.getElementById('hinmeiDisplay');
-  zunoInp.value       = '';
-  hinmeiInp.value     = '';
-  zunoInp.className   = 'field-value';
-  hinmeiInp.className = 'field-value';
-  hinmeiInp.placeholder = '品名（マスタ検索で自動入力）';
-
+  var zi = document.getElementById('zunoDisplay');
+  var hi = document.getElementById('hinmeiDisplay');
+  zi.value = ''; hi.value = '';
+  zi.className = 'field-value'; hi.className = 'field-value';
+  hi.placeholder = '品名（マスタ検索で自動入力）';
   document.getElementById('seibanInput').value = '';
-
-  var sizeEl = document.getElementById('sizeDisplay');
-  sizeEl.textContent = '―';
-  sizeEl.className   = 'field-value';
+  var se = document.getElementById('sizeDisplay');
+  se.textContent = '―'; se.className = 'field-value';
 
   resetDials();
   document.getElementById('inventoryTypeSelect').value = '';
   document.getElementById('registerBtn').disabled = true;
-
   setManualInputEnabled(true);
 }
 
