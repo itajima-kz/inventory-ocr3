@@ -354,6 +354,7 @@
       font-weight: 500;
     }
 
+    /* ===== OCR読み取り結果エリア ===== */
     .ocr-result-wrap {
       display: none;
       margin-top: 8px;
@@ -425,7 +426,11 @@
       border-color: var(--blue);
       box-shadow: 0 0 0 3px rgba(46,107,224,0.14);
     }
-    input.field-value[readonly] { cursor: default; opacity: 0.85; }
+    input.field-value[readonly] {
+      cursor: default;
+      opacity: 0.85;
+      background: var(--surface2);
+    }
     input.field-value::placeholder { color: #a0b0cc; font-weight: 400; font-size: 13px; }
 
     .field-value.filled, input.field-value.filled {
@@ -447,10 +452,7 @@
       font-weight: 700;
     }
 
-    /* ===================================================
-       ★ 改良ダイヤルシステム
-       ================================================= */
-
+    /* ===== ダイヤルシステム ===== */
     .dial-section-label {
       font-size: 13px;
       color: var(--blue-dk);
@@ -483,7 +485,6 @@
       letter-spacing: 0.04em;
     }
 
-    /* ダイヤルホイール本体 */
     .dial-wheel {
       position: relative;
       width: 100%;
@@ -496,7 +497,6 @@
       touch-action: none;
       user-select: none;
       cursor: ns-resize;
-      /* グラデーションマスクで上下をフェード（立体感演出） */
       -webkit-mask-image: linear-gradient(to bottom,
         transparent 0%,
         rgba(0,0,0,0.55) 16%,
@@ -513,12 +513,11 @@
         transparent 100%);
     }
 
-    /* 中央選択枠（ハイライト）*/
     .dial-highlight {
       position: absolute;
       top: 50%;
       left: 5px; right: 5px;
-      height: 46px;               /* ITEM_H と合わせる */
+      height: 46px;
       transform: translateY(-50%);
       border: 2px solid rgba(64,168,200,0.75);
       border-radius: 8px;
@@ -528,14 +527,12 @@
       box-shadow: inset 0 0 8px rgba(64,168,200,0.10);
     }
 
-    /* アイテムコンテナ（仮想スクロール用） */
     .dial-inner {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
       pointer-events: none;
     }
 
-    /* 合計表示 */
     .dial-total {
       text-align: center;
       margin-top: 10px;
@@ -555,12 +552,11 @@
       margin-left: 5px;
     }
 
-    /* 千百十一の区切り */
     .dial-sep {
       font-size: 20px;
       font-weight: 800;
       color: rgba(200,216,248,0.5);
-      padding-top: 28px; /* unit-label(11px+4px gap) + partial alignment */
+      padding-top: 28px;
       flex: 0 0 auto;
       align-self: flex-start;
     }
@@ -745,7 +741,7 @@
     <div class="subtitle" id="currentDate">読込中...</div>
   </header>
 
-  <!-- 場所・担当者カード -->
+  <!-- ===== 場所・担当者カード ===== -->
   <div class="card operator-card" id="operatorCard">
     <div class="card-label">
       場所 ／ 担当者
@@ -768,7 +764,7 @@
     </div>
   </div>
 
-  <!-- スキャンカード -->
+  <!-- ===== スキャンカード ===== -->
   <div class="card scan-card" id="scanCard">
     <div class="card-label">OCR 図番読取</div>
     <div class="scan-square" id="scanSquare">
@@ -781,46 +777,79 @@
       <div id="scanFlash"></div>
       <div class="scan-icon" id="scanIcon">🔍</div>
     </div>
+
     <div class="scan-label" id="scanLabel">🔍 下のボタンでOCR開始</div>
+
     <button id="btnCameraStart" class="btn-cam-start ocr-btn" onclick="startCamera()">
       🔍 OCRスキャン開始
     </button>
     <button id="btnCameraStop" onclick="stopCamera()">⏹ カメラを停止</button>
-    <div class="scan-hint" id="scanHint">🔍 ガイド枠に図番を合わせてください</div>
-    <div id="ocrDebugWrap">
+
+    <div class="scan-hint" id="scanHint" style="display:none;">🔍 ガイド枠に図番を合わせてください</div>
+
+    <div id="ocrDebugWrap" style="display:none;">
       <p>▼ OCRに送っている画像</p>
       <canvas id="ocrDebugCanvas"></canvas>
     </div>
-    <div class="ocr-result-wrap visible" id="ocrResultWrap">
-      <div class="ocr-part-label">読み取った図番</div>
-      <input id="ocrPartInput" type="text" value="----" readonly
+
+    <!-- OCR読み取り結果 + マスタ検索ボタン（OCRフロー用） -->
+    <div class="ocr-result-wrap" id="ocrResultWrap">
+      <div class="ocr-part-label">読み取った図番（修正可）</div>
+      <!--
+        ★ バグ修正ポイント:
+        - oninput でのvalue置換を廃止 → BSキー正常動作・余分入力防止
+        - onblur で大文字正規化のみ実施
+        - readonly は OCR 読み取り前のみ
+      -->
+      <input id="ocrPartInput" type="text" value="----"
         placeholder="OCR読取待ち..."
-        oninput="onOcrPartEdit()" onblur="onOcrPartBlur()">
+        oninput="onOcrPartEdit()"
+        onblur="onOcrPartBlur()">
       <div class="ocr-part-hint" id="ocrPartHint">OCR読み取り後、手修正も可能です</div>
     </div>
-    <button id="btnMasterSearch" class="btn-cam-start btn-master-search" onclick="doMasterSearch()" style="display:none;">
+
+    <!-- マスタ検索ボタン（OCRフロー用）: ocrResultWrapの直下に配置 -->
+    <button id="btnMasterSearch" class="btn-cam-start btn-master-search"
+            onclick="doMasterSearch()" style="display:none;">
       🔎 マスタ検索
     </button>
   </div>
 
-  <!-- 登録情報カード -->
+  <!-- ===== 登録情報カード ===== -->
   <div class="card" id="infoCard" style="position:relative;">
     <div class="card-label">登録情報</div>
     <button class="operator-clear-btn" onclick="clearInfoCard()">クリア</button>
 
-    <div style="margin-bottom:7px;">
+    <!-- 図番 -->
+    <div style="margin-bottom:4px;">
       <span class="field-label">図番</span>
+      <!--
+        ★ バグ修正ポイント:
+        - oninput での文字置換を廃止（BSキー無効・余分入力の原因を除去）
+        - onblur でのみ大文字正規化
+        - スキャンなし時は自由に手入力可能
+      -->
       <input type="text" id="zunoDisplay" class="field-value"
         placeholder="図番を直接入力できます"
-        oninput="onZunoManualInput(this)"
-        onblur="onZunoManualBlur()">
+        oninput="onZunoInput()"
+        onblur="onZunoBlur()">
     </div>
+
+    <!-- 手入力フロー用 マスタ検索ボタン（図番欄の直下） -->
+    <button id="btnManualMasterSearch" class="btn-cam-start btn-master-search"
+            onclick="doManualMasterSearch()" style="margin-bottom:8px;">
+      🔎 マスタ検索
+    </button>
+
+    <!-- 品名 -->
     <div style="margin-bottom:7px;">
       <span class="field-label">品名</span>
       <input type="text" id="hinmeiDisplay" class="field-value"
-        placeholder="品名（マスタ検索で自動入力）"
+        placeholder="品名（マスタ検索で自動入力・手入力も可）"
         oninput="updateRegisterBtn()">
     </div>
+
+    <!-- 製番 -->
     <div style="margin-bottom:7px;">
       <span class="field-label">製番<span class="label-sub">（任意・9桁数字）</span></span>
       <input type="text" id="seibanInput" class="field-value"
@@ -829,16 +858,17 @@
         inputmode="numeric"
         oninput="this.value=this.value.replace(/[^0-9]/g,'');updateRegisterBtn()">
     </div>
+
+    <!-- サイズ（非表示） -->
     <div style="display:none;">
       <span class="field-label">サイズ</span>
       <div class="field-value" id="sizeDisplay">―</div>
     </div>
 
-    <!-- ★ 改良ダイヤル数量入力 -->
+    <!-- 数量ダイヤル -->
     <div>
       <div class="dial-section-label">数量（ダイヤルで入力）</div>
       <div class="dial-container">
-        <!-- 千の位 -->
         <div class="dial-group">
           <div class="dial-unit-label">千</div>
           <div class="dial-wheel" id="dial-1000">
@@ -847,7 +877,6 @@
           </div>
         </div>
         <div class="dial-sep">·</div>
-        <!-- 百の位 -->
         <div class="dial-group">
           <div class="dial-unit-label">百</div>
           <div class="dial-wheel" id="dial-100">
@@ -856,7 +885,6 @@
           </div>
         </div>
         <div class="dial-sep">·</div>
-        <!-- 十の位 -->
         <div class="dial-group">
           <div class="dial-unit-label">十</div>
           <div class="dial-wheel" id="dial-10">
@@ -865,7 +893,6 @@
           </div>
         </div>
         <div class="dial-sep">·</div>
-        <!-- 一の位 -->
         <div class="dial-group">
           <div class="dial-unit-label">一</div>
           <div class="dial-wheel" id="dial-1">
@@ -886,7 +913,7 @@
     </div>
   </div>
 
-  <!-- ボタン行 -->
+  <!-- ===== ボタン行 ===== -->
   <div class="btn-row">
     <button class="btn btn-rescan" onclick="resetAll()">🔄 再スキャン</button>
     <button class="btn btn-register" id="registerBtn" onclick="registerData()" disabled>✅ 登録</button>
@@ -904,54 +931,33 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxFYwYko8L09Ao3e9EhmknHbO1rJqfRpXZScMcNIVB4PiCMlQGNcW8DkqL-Cx1g311QFw/exec';
 
 /* ============================================================
-   ★ 改良ダイヤルシステム
-   - 仮想スクロール（無限ループ）
-   - 慣性スクロール + スナップアニメーション
-   - Web Audio でカチカチ音
-   - タップ上半分:-1 / タップ下半分:+1
+   ダイヤルシステム
 ============================================================ */
+var ITEM_H  = 46;
+var WHEEL_H = 160;
+var DCENTER = WHEEL_H / 2 - ITEM_H / 2;
+var PLACES  = [1000, 100, 10, 1];
 
-var ITEM_H  = 46;   // アイテム1個の高さ (px)
-var WHEEL_H = 160;  // ホイール全体の高さ (px)
-var DCENTER = WHEEL_H / 2 - ITEM_H / 2;  // 中央アイテムの top 座標 = 57
-
-// places 配列
-var PLACES = [1000, 100, 10, 1];
-
-// ダイヤル状態
-var _dPos = {};   // 連続浮動小数点位置（整数=値）
-var _dVel = {};   // 速度 (pos-unit / ms)
-var _dRaf = {};   // rAF ID
-var _dLastInt = {};  // 直前の整数位置（音用）
-
-// dialValues は後続の registerData 等で使う（互換維持）
+var _dPos     = {};
+var _dVel     = {};
+var _dRaf     = {};
+var _dLastInt = {};
 var dialValues = { 1000: 0, 100: 0, 10: 0, 1: 0 };
 
 PLACES.forEach(function(p) {
-  _dPos[p] = 0;
-  _dVel[p] = 0;
-  _dRaf[p] = null;
-  _dLastInt[p] = 0;
+  _dPos[p] = 0; _dVel[p] = 0; _dRaf[p] = null; _dLastInt[p] = 0;
 });
 
-
-/* ---------- 描画 ---------- */
 function _dRender(place) {
   var pos   = _dPos[place];
   var inner = document.getElementById('dial-inner-' + place);
   inner.innerHTML = '';
-
-  var startI = Math.floor(pos) - 3;
-  var endI   = Math.ceil(pos)  + 3;
-
+  var startI = Math.floor(pos) - 3, endI = Math.ceil(pos) + 3;
   for (var i = startI; i <= endI; i++) {
     var val  = ((i % 10) + 10) % 10;
-    var dist = i - pos;             // 中央からの距離（小数）
+    var dist = i - pos;
     var y    = DCENTER + dist * ITEM_H;
-
-    // 描画範囲外はスキップ
     if (y < -ITEM_H || y > WHEEL_H + ITEM_H) continue;
-
     var absD    = Math.abs(dist);
     var scale   = Math.max(0.60, 1 - absD * 0.175);
     var opacity = Math.max(0.18, 1 - absD * 0.48);
@@ -959,22 +965,16 @@ function _dRender(place) {
     var color   = absD < 0.5
       ? '#00ff88'
       : 'rgba(64,168,200,' + opacity.toFixed(2) + ')';
-
     var el = document.createElement('div');
     el.style.cssText =
       'position:absolute;left:0;right:0;height:' + ITEM_H + 'px;' +
       'top:' + y.toFixed(1) + 'px;' +
       'display:flex;align-items:center;justify-content:center;' +
-      'font-family:monospace;font-weight:900;' +
-      'font-size:' + fsize + 'px;' +
-      'color:' + color + ';' +
-      'transform:scale(' + scale.toFixed(3) + ');' +
-      'pointer-events:none;';
+      'font-family:monospace;font-weight:900;font-size:' + fsize + 'px;' +
+      'color:' + color + ';transform:scale(' + scale.toFixed(3) + ');pointer-events:none;';
     el.textContent = val;
     inner.appendChild(el);
   }
-
-  // 整数位置が変わったとき → dialValues 更新（音はタッチハンドラ側で制御）
   var intPos = Math.round(pos);
   if (intPos !== _dLastInt[place]) {
     _dLastInt[place] = intPos;
@@ -984,108 +984,70 @@ function _dRender(place) {
   }
 }
 
-/* ---------- 値セット（リセット・復元用） ---------- */
 function _dSetVal(place, val) {
   if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
   val = ((val % 10) + 10) % 10;
-  _dPos[place] = val;
-  _dLastInt[place] = val;
-  dialValues[place] = val;
+  _dPos[place] = val; _dLastInt[place] = val; dialValues[place] = val;
   _dRender(place);
 }
 
-/* ---------- スナップアニメーション ---------- */
 function _dSnap(place) {
   if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
   var target = Math.round(_dPos[place]);
   var start  = _dPos[place];
-  var t0     = performance.now();
-  var dur    = 130;  // ms
-
+  var t0     = performance.now(), dur = 130;
   function step(now) {
     var t = Math.min(1, (now - t0) / dur);
-    var e = 1 - (1 - t) * (1 - t) * (1 - t);  // ease-out cubic
+    var e = 1 - (1 - t) * (1 - t) * (1 - t);
     _dPos[place] = start + (target - start) * e;
     _dRender(place);
-    if (t < 1) {
-      _dRaf[place] = requestAnimationFrame(step);
-    } else {
-      _dPos[place] = target;
-      dialValues[place] = ((target % 10) + 10) % 10;
-      renderDialTotal();
-      updateRegisterBtn();
-    }
+    if (t < 1) { _dRaf[place] = requestAnimationFrame(step); }
+    else { _dPos[place] = target; dialValues[place] = ((target % 10) + 10) % 10; renderDialTotal(); updateRegisterBtn(); }
   }
   _dRaf[place] = requestAnimationFrame(step);
 }
 
-/* ---------- 慣性スクロール ---------- */
 function _dMomentum(place, vel) {
   if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
-  var FRICTION = 0.89;
-  var MIN_VEL  = 0.0015;
-
+  var FRICTION = 0.89, MIN_VEL = 0.0015;
   function step() {
     vel *= FRICTION;
     _dPos[place] += vel * 16.67;
     _dRender(place);
-    if (Math.abs(vel) > MIN_VEL) {
-      _dRaf[place] = requestAnimationFrame(step);
-    } else {
-      _dSnap(place);
-    }
+    if (Math.abs(vel) > MIN_VEL) { _dRaf[place] = requestAnimationFrame(step); }
+    else { _dSnap(place); }
   }
   _dRaf[place] = requestAnimationFrame(step);
 }
 
-/* ---------- ドラッグバインド ---------- */
 function _bindDial(place) {
   var wheel = document.getElementById('dial-' + place);
-  // ← 後述の初期化で dial-{place} ではなく dial-inner の親を取る
-  wheel = document.getElementById('dial-' + place);
-
-  var startY = 0, startPos = 0;
-  var lastY  = 0, lastTime = 0, vel = 0;
-  var isDrag = false;
-  var tapThreshold = 6;
-  var moved = 0;
+  var startY = 0, startPos = 0, lastY = 0, lastTime = 0, vel = 0;
+  var isDrag = false, tapThreshold = 6, moved = 0;
 
   function onStart(cy) {
     if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
-    isDrag   = true;
-    startY   = cy;
-    startPos = _dPos[place];
-    lastY    = cy;
-    lastTime = Date.now();
-    vel      = 0;
-    moved    = 0;
-    _prevRoundPos = Math.round(_dPos[place]);
+    isDrag = true; startY = cy; startPos = _dPos[place];
+    lastY = cy; lastTime = Date.now(); vel = 0; moved = 0;
   }
-
   function onMove(cy) {
     if (!isDrag) return;
-    var now = Date.now();
-    var dt  = Math.max(1, now - lastTime);
-    vel     = -(cy - lastY) / dt / ITEM_H;
-    lastY   = cy;
-    lastTime = now;
-    moved   = Math.abs(cy - startY);
+    var now = Date.now(), dt = Math.max(1, now - lastTime);
+    vel = -(cy - lastY) / dt / ITEM_H;
+    lastY = cy; lastTime = now;
+    moved = Math.abs(cy - startY);
     _dPos[place] = startPos - (cy - startY) / ITEM_H;
     _dRender(place);
   }
-
   function onEnd(cy, wheelEl) {
     if (!isDrag) return;
     isDrag = false;
-
     if (moved < tapThreshold) {
-      // タップ判定: ホイールの上半分 → -1, 下半分 → +1
-      var rect = wheelEl.getBoundingClientRect();
-      var relY = cy - rect.top;
+      var rect  = wheelEl.getBoundingClientRect();
+      var relY  = cy - rect.top;
       var delta = relY < WHEEL_H / 2 ? -1 : 1;
       _dPos[place] = Math.round(_dPos[place]) + delta;
-      _dRender(place);
-      _dSnap(place);
+      _dRender(place); _dSnap(place);
     } else if (Math.abs(vel) > 0.005) {
       _dMomentum(place, vel);
     } else {
@@ -1093,78 +1055,44 @@ function _bindDial(place) {
     }
   }
 
-  // タッチイベント
-  wheel.addEventListener('touchstart', function(e) {
-    e.preventDefault();
-    onStart(e.touches[0].clientY);
-  }, { passive: false });
+  wheel.addEventListener('touchstart', function(e) { e.preventDefault(); onStart(e.touches[0].clientY); }, { passive: false });
+  wheel.addEventListener('touchmove',  function(e) { e.preventDefault(); onMove(e.touches[0].clientY); },  { passive: false });
+  wheel.addEventListener('touchend',   function(e) { onEnd(e.changedTouches[0].clientY, wheel); });
 
-  wheel.addEventListener('touchmove', function(e) {
-    e.preventDefault();
-    onMove(e.touches[0].clientY);
-  }, { passive: false });
-
-  wheel.addEventListener('touchend', function(e) {
-    var cy = e.changedTouches[0].clientY;
-    onEnd(cy, wheel);
-  });
-
-  // マウスイベント（PC テスト用）
   var mdrag = false;
-  wheel.addEventListener('mousedown', function(e) {
-    e.preventDefault();
-    mdrag = true;
-    onStart(e.clientY);
-  });
-  document.addEventListener('mousemove', function(e) {
-    if (mdrag) onMove(e.clientY);
-  });
-  document.addEventListener('mouseup', function(e) {
-    if (mdrag) { mdrag = false; onEnd(e.clientY, wheel); }
-  });
-
+  wheel.addEventListener('mousedown', function(e) { e.preventDefault(); mdrag = true; onStart(e.clientY); });
+  document.addEventListener('mousemove', function(e) { if (mdrag) onMove(e.clientY); });
+  document.addEventListener('mouseup',   function(e) { if (mdrag) { mdrag = false; onEnd(e.clientY, wheel); } });
   wheel.addEventListener('wheel', function(e) {
     e.preventDefault();
     if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
     _dPos[place] += e.deltaY > 0 ? 1 : -1;
-    _dRender(place);
-    _dSnap(place);
+    _dRender(place); _dSnap(place);
   }, { passive: false });
 }
 
-/* ---------- 初期化（旧 initDials 相当） ---------- */
 function initDials() {
-  PLACES.forEach(function(p) {
-    _dSetVal(p, 0);
-    _bindDial(p);
-  });
+  PLACES.forEach(function(p) { _dSetVal(p, 0); _bindDial(p); });
   renderDialTotal();
 }
 
-/* ---------- リセット（旧 resetDials 相当） ---------- */
 function resetDials() {
   PLACES.forEach(function(p) { _dSetVal(p, 0); });
   renderDialTotal();
 }
 
-/* ---------- 合計値取得（変わらず） ---------- */
 function getDialTotal() {
-  return dialValues[1000] * 1000
-       + dialValues[100]  * 100
-       + dialValues[10]   * 10
-       + dialValues[1];
+  return dialValues[1000] * 1000 + dialValues[100] * 100 + dialValues[10] * 10 + dialValues[1];
 }
 
 function renderDialTotal() {
   var total = getDialTotal();
-  document.getElementById('dialTotal').innerHTML =
-    '<strong>' + total.toLocaleString() + '</strong> <span>個</span>';
+  document.getElementById('dialTotal').innerHTML = '<strong>' + total.toLocaleString() + '</strong> <span>個</span>';
 }
 
 /* ============================================================
-   以下、既存コードそのまま（GAS通信・登録・カメラ・その他）
+   アプリ状態管理
 ============================================================ */
-
 var cameraStream  = null;
 var cameraActive  = false;
 var ocrTimer      = null;
@@ -1172,14 +1100,20 @@ var ocrRunning    = false;
 var currentZuno   = null;
 var currentHinmei = '';
 var currentSize   = '';
+// OCRフロー中かどうか（マスタ検索時の挙動分岐に使用）
+var isOcrFlow     = false;
 
+/* ============================================================
+   初期化
+============================================================ */
 window.addEventListener('load', function () {
   updateDateTime();
   setInterval(updateDateTime, 1000);
   loadMasterData();
   initDials();
   restoreOperator();
-  setManualInputEnabled(true);
+  // 起動時: 手入力モード（図番・品名 編集可）
+  setInfoFieldsEditable(true, true);
 });
 
 function updateDateTime() {
@@ -1190,6 +1124,9 @@ function updateDateTime() {
     '  ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
 }
 
+/* ============================================================
+   GAS通信
+============================================================ */
 function callGAS(action, params) {
   return new Promise(function(resolve, reject) {
     var isGet = (action === 'getMaster' || action === 'lookup' || action === 'getPersonnel');
@@ -1211,6 +1148,9 @@ function callGAS(action, params) {
   });
 }
 
+/* ============================================================
+   マスタデータ読み込み
+============================================================ */
 function loadMasterData() {
   callGAS('getMaster', {})
     .then(function(data){
@@ -1231,6 +1171,9 @@ function fillSelect(id, items) {
   });
 }
 
+/* ============================================================
+   場所・担当者
+============================================================ */
 var savedDept = '', savedPerson = '';
 
 function onDepartmentChange() {
@@ -1297,48 +1240,203 @@ function updateLockBadge() {
   badge.style.display = (dept || person) ? '' : 'none';
 }
 
-function setManualInputEnabled(enabled) {
+/* ============================================================
+   図番フィールド制御
+   ★ バグ修正: setInfoFieldsEditable で readonly/editable を管理
+              oninput での value 置換を廃止
+============================================================ */
+
+/**
+ * 図番・品名の編集可否を設定
+ * @param {boolean} zunoEditable - 図番が編集可能か
+ * @param {boolean} hinmeiEditable - 品名が編集可能か
+ */
+function setInfoFieldsEditable(zunoEditable, hinmeiEditable) {
   var zi = document.getElementById('zunoDisplay');
   var hi = document.getElementById('hinmeiDisplay');
-  if (enabled) {
-    zi.removeAttribute('readonly'); hi.removeAttribute('readonly');
-    zi.placeholder = '図番を直接入力できます';
-    hi.placeholder = '品名（マスタ検索で自動入力）';
+  var mb = document.getElementById('btnManualMasterSearch');
+
+  if (zunoEditable) {
+    zi.removeAttribute('readonly');
   } else {
-    zi.setAttribute('readonly', true); hi.setAttribute('readonly', true);
+    zi.setAttribute('readonly', true);
   }
+
+  if (hinmeiEditable) {
+    hi.removeAttribute('readonly');
+  } else {
+    hi.setAttribute('readonly', true);
+  }
+
+  // 手入力用マスタ検索ボタンは、図番が編集可能な時だけ有効表示
+  mb.style.display = zunoEditable ? 'flex' : 'none';
 }
 
-function onZunoManualInput(inp) {
-  inp.value = inp.value.replace(/[^A-Za-z0-9\-]/g, '').toUpperCase();
-  currentZuno = null; updateRegisterBtn();
+/**
+ * 図番 oninput ハンドラ
+ * ★ バグ修正: value 置換を廃止 → BSキー正常動作・余分入力防止
+ */
+function onZunoInput() {
+  currentZuno = null;
+  updateRegisterBtn();
 }
 
-function onZunoManualBlur() {
-  if (cameraActive) return;
-  var code = document.getElementById('zunoDisplay').value.trim();
-  if (!code) return;
+/**
+ * 図番 onblur ハンドラ
+ * ★ バグ修正: 大文字正規化のみ。自動マスタ検索は廃止（手動ボタンで行う）
+ */
+function onZunoBlur() {
+  var inp  = document.getElementById('zunoDisplay');
+  var code = inp.value.trim().toUpperCase();
+  inp.value = code;
+  updateRegisterBtn();
+}
+
+/**
+ * 手入力フロー用マスタ検索
+ * ヒット: 品名を自動入力（修正可）、図番はそのまま（修正可）
+ * 未ヒット: 品名欄を手入力促す状態にする（修正可）
+ */
+function doManualMasterSearch() {
+  var code = document.getElementById('zunoDisplay').value.trim().toUpperCase();
+  if (!code) { showToast('⚠️ 図番を入力してください', 'error'); return; }
+  document.getElementById('zunoDisplay').value = code;
   showLoading(true, 'マスタ検索中…');
   callGAS('lookup', { barcode: code })
-    .then(function(d){ showLoading(false); applyLookupResult(d); })
+    .then(function(d){ showLoading(false); applyLookupResult(d, false); })
     .catch(function(e){ showLoading(false); showToast('❌ 検索エラー: ' + e.message, 'error'); });
 }
 
-function clearInfoCard() {
-  currentZuno = null; currentHinmei = ''; currentSize = '';
-  var zi = document.getElementById('zunoDisplay');
-  var hi = document.getElementById('hinmeiDisplay');
-  zi.value = ''; hi.value = '';
-  zi.className = 'field-value'; hi.className = 'field-value';
-  document.getElementById('seibanInput').value = '';
-  var se = document.getElementById('sizeDisplay');
-  se.textContent = '―'; se.className = 'field-value';
-  resetDials();
-  document.getElementById('inventoryTypeSelect').value = '';
-  document.getElementById('registerBtn').disabled = true;
-  showToast('🗑️ 登録情報をクリアしました', 'updated');
+/* ============================================================
+   OCR関連
+============================================================ */
+
+/**
+ * OCR結果 oninput ハンドラ
+ * ★ バグ修正: value 置換を廃止 → BSキー正常動作
+ */
+function onOcrPartEdit() {
+  var inp = document.getElementById('ocrPartInput');
+  inp.className = 'editing';
+  document.getElementById('ocrPartHint').textContent = '✎ 編集中 — 修正後にマスタ検索ボタンを押してください';
+  // 内容があればマスタ検索ボタンを表示
+  var hasContent = inp.value.trim() && inp.value.trim() !== '----';
+  document.getElementById('btnMasterSearch').style.display = hasContent ? 'flex' : 'none';
 }
 
+/**
+ * OCR結果 onblur ハンドラ
+ * ★ バグ修正: 大文字正規化のみ（カーソル位置をリセットしない）
+ */
+function onOcrPartBlur() {
+  var inp  = document.getElementById('ocrPartInput');
+  var code = inp.value.trim().toUpperCase();
+  if (!code || code === '----') return;
+  inp.value = code;
+  if (inp.className === 'editing') {
+    inp.className = '';
+    document.getElementById('ocrPartHint').textContent = '修正完了 — マスタ検索ボタンを押してください';
+  }
+}
+
+/**
+ * OCRフロー用マスタ検索（ocrPartInputの値を使用）
+ * ヒット: 図番・品名ともに readonly で表示
+ * 未ヒット: 図番・品名ともに編集可のまま
+ */
+function doMasterSearch() {
+  var inp  = document.getElementById('ocrPartInput');
+  var code = inp.value.trim().toUpperCase();
+  if (!code || code === '----') { showToast('⚠️ 図番を入力してください', 'error'); return; }
+  inp.value = code; inp.className = '';
+  showLoading(true, 'マスタ検索中…');
+  callGAS('lookup', { barcode: code })
+    .then(function(d){ showLoading(false); applyLookupResult(d, true); })
+    .catch(function(e){ showLoading(false); showToast('❌ 検索エラー: ' + e.message, 'error'); });
+}
+
+/**
+ * マスタ検索結果を画面に反映
+ * @param {Object}  result  - GASから返却されたルックアップ結果
+ * @param {boolean} fromOcr - true=OCRフロー / false=手入力フロー
+ *
+ * 【OCRフロー + ヒット】  → 図番・品名ともに readonly（確定表示）
+ * 【OCRフロー + 未ヒット】→ 図番・品名ともに編集可（手修正を促す）
+ * 【手入力フロー + ヒット】 → 品名を自動入力して編集可、図番は編集可のまま
+ * 【手入力フロー + 未ヒット】→ 品名欄に手入力を促すプレースホルダー、両方編集可
+ */
+function applyLookupResult(result, fromOcr) {
+  var zuno     = (result.zuno   || result.part || '').toUpperCase();
+  var hinmei   = result.hinmei || result.name || '';
+  var size     = result.size   || '';
+  var inMaster = (result.inMaster !== undefined)
+    ? result.inMaster
+    : (result.success && hinmei && hinmei !== '（マスタ未登録）');
+
+  currentZuno = zuno; currentHinmei = hinmei; currentSize = size;
+
+  var zi = document.getElementById('zunoDisplay');
+  var hi = document.getElementById('hinmeiDisplay');
+  var se = document.getElementById('sizeDisplay');
+
+  // 図番を表示（手入力フローの場合、既存の入力値が zuno と同じかチェック不要、上書き）
+  zi.value     = zuno;
+  zi.className = 'field-value' + (zuno ? ' filled' : '');
+
+  // 品名を表示
+  if (inMaster) {
+    hi.value       = hinmei;
+    hi.className   = 'field-value filled';
+    hi.placeholder = '品名';
+  } else {
+    hi.value       = '';
+    hi.className   = 'field-value warn';
+    hi.placeholder = '（マスタ未登録 — 品名を手入力してください）';
+  }
+
+  // サイズ
+  se.textContent = size || '―';
+  se.className   = 'field-value' + (inMaster ? ' filled' : ' warn');
+
+  // ===== フローによる readonly 制御 =====
+  if (fromOcr && inMaster) {
+    // OCRフロー・ヒット → 両方 readonly（確定）
+    setInfoFieldsEditable(false, false);
+    isOcrFlow = true;
+  } else if (fromOcr && !inMaster) {
+    // OCRフロー・未ヒット → 両方編集可（修正を促す）
+    setInfoFieldsEditable(true, true);
+    isOcrFlow = true;
+  } else {
+    // 手入力フロー → 常に編集可
+    setInfoFieldsEditable(true, true);
+    isOcrFlow = false;
+  }
+
+  // OCRフロー: ocrPartInput の状態更新
+  if (fromOcr) {
+    var ocrInp = document.getElementById('ocrPartInput');
+    ocrInp.value     = zuno || ocrInp.value;
+    ocrInp.className = inMaster ? '' : 'notfound';
+    document.getElementById('ocrPartHint').textContent = inMaster
+      ? '✅ マスタ確認済 — 数量を入力して登録してください'
+      : '⚠️ マスタ未登録 — 図番・品名を修正後、数量を入力してください';
+    // ヒット済みなのでマスタ検索ボタンは非表示に
+    if (inMaster) document.getElementById('btnMasterSearch').style.display = 'none';
+  }
+
+  showToast(
+    inMaster
+      ? '✅ 読取完了！数量ダイヤルを合わせてください'
+      : '⚠️ マスタ未登録の図番です',
+    inMaster ? 'success' : 'updated'
+  );
+  updateRegisterBtn();
+}
+
+/* ============================================================
+   カメラ・OCRループ
+============================================================ */
 function startCamera() {
   if (cameraActive) return;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -1353,11 +1451,14 @@ function startCamera() {
     video.srcObject = stream; video.style.display = 'block';
     document.getElementById('btnCameraStart').style.display = 'none';
     document.getElementById('btnCameraStop').style.display  = 'flex';
+    document.getElementById('btnMasterSearch').style.display = 'none';
     document.getElementById('scanSquare').className = 'scan-square camera-on mode-ocr';
     document.getElementById('ocrGuide').style.display = 'block';
     document.getElementById('scanLabel').textContent  = '🔍 ガイド枠に図番を合わせてください';
+    document.getElementById('scanHint').style.display = 'flex';
     document.getElementById('scanHint').textContent   = '🔍 2秒ごとに自動OCR解析中…';
-    setManualInputEnabled(false);
+    // カメラON中は登録情報の手入力を無効化（スキャン優先）
+    setInfoFieldsEditable(false, false);
     video.onloadedmetadata = function(){ video.play().then(startOcrLoop); };
   })
   .catch(function(err){
@@ -1378,10 +1479,11 @@ function stopCamera() {
   document.getElementById('btnCameraStart').style.display = '';
   document.getElementById('btnCameraStop').style.display  = 'none';
   document.getElementById('scanSquare').className = 'scan-square';
+  document.getElementById('scanHint').style.display = 'none';
   cameraActive = false; ocrRunning = false;
   document.getElementById('scanLabel').textContent = '🔍 下のボタンでOCR開始';
-  document.getElementById('scanHint').textContent  = '🔍 ガイド枠に図番を合わせてください';
-  setManualInputEnabled(true);
+  // カメラOFF → 手入力モードに戻す（フィールド編集可）
+  setInfoFieldsEditable(true, true);
 }
 
 function startOcrLoop() {
@@ -1401,15 +1503,19 @@ function doOcrTick() {
     .then(function(data){
       guide.classList.remove('scanning');
       if (data.part) {
-        stopCamera(); setOcrResult(data.part);
+        // OCR成功: カメラ停止 → OCR結果を表示 → ユーザーに確認を促す
+        stopCamera();
+        setOcrResult(data.part);
         showToast('✅ 図番を読み取りました。確認後にマスタ検索してください', 'success');
       } else if (data.rawText && data.rawText.trim()) {
-        var rv = data.rawText.replace(/\n/g, ' ').trim();
-        showToast('⚠️ 図番を確認・修正してマスタ検索してください', 'info');
-        setOcrResult(rv.replace(/[\s\-]/g, '').substring(0, 30));
+        // 図番候補が見つからず生テキストのみ: ユーザーに手修正を促す
+        stopCamera();
+        // 生テキストから余分な改行・空白を除去して表示（文字制限はしない→BSキー問題を回避）
+        var rv = data.rawText.replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').trim();
+        setOcrResult(rv.substring(0, 40));
         document.getElementById('ocrPartInput').className = 'editing';
-        document.getElementById('ocrPartHint').textContent = '図番部分を残して修正し、マスタ検索してください';
-        stopCamera(); updateRegisterBtn();
+        document.getElementById('ocrPartHint').textContent = '図番部分のみ残して修正し、マスタ検索してください';
+        showToast('⚠️ 図番を確認・修正してマスタ検索してください', 'info');
       } else {
         showToast('📷 図番が読み取れません。明るい場所で枠に合わせてください', 'info');
       }
@@ -1431,7 +1537,7 @@ function captureOcr() {
   var ratioY = (gr.top  - vrect.top)  / vrect.height;
   var ratioW = gr.width  / vrect.width;
   var ratioH = gr.height / vrect.height;
-  var dispAspect = vrect.width / vrect.height;
+  var dispAspect  = vrect.width / vrect.height;
   var videoAspect = vw / vh;
   var coverScale, coverOffX, coverOffY;
   if (videoAspect > dispAspect) {
@@ -1463,74 +1569,62 @@ function captureOcr() {
   return out.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
 }
 
+/**
+ * OCR結果をocrPartInputに表示し、マスタ検索ボタンを有効化する
+ * ★ バグ修正: code に対して replace で文字フィルタリングしない
+ *             → BSキー正常動作・余分入力防止
+ */
 function setOcrResult(code) {
-  code = code.replace(/[\s\-]/g, '');
-  var inp = document.getElementById('ocrPartInput');
-  inp.value = code.toUpperCase(); inp.removeAttribute('readonly'); inp.className = '';
-  document.getElementById('ocrPartHint').textContent = '修正が必要な場合は直接編集し、マスタ検索してください';
-  document.getElementById('ocrResultWrap').classList.add('visible');
-  document.getElementById('btnMasterSearch').style.display = 'flex';
-  var zi = document.getElementById('zunoDisplay');
-  zi.value = code.toUpperCase(); zi.className = 'field-value';
-}
-
-function onOcrPartEdit() {
-  var inp = document.getElementById('ocrPartInput');
-  inp.className = 'editing';
-  inp.value = inp.value.replace(/[\s\-]/g, '').trim().toUpperCase();
-  document.getElementById('ocrPartHint').textContent = '✎ 編集中 — 修正後にマスタ検索ボタンを押してください';
-}
-
-function onOcrPartBlur() {
-  var inp = document.getElementById('ocrPartInput');
-  var code = inp.value.replace(/[\s\-]/g, '').trim().toUpperCase();
-  if (!code || code === '----') return;
-  inp.className = ''; inp.value = code;
-  document.getElementById('ocrPartHint').textContent = '修正完了 — マスタ検索ボタンを押してください';
-}
-
-function doMasterSearch() {
+  code = code.trim().toUpperCase();
   var inp  = document.getElementById('ocrPartInput');
-  var code = inp.value.replace(/[\s\-]/g, '').trim().toUpperCase();
-  if (!code || code === '----') { showToast('⚠️ 図番を入力してください', 'error'); return; }
-  inp.value = code; inp.className = '';
-  showLoading(true, 'マスタ検索中…');
-  callGAS('lookup', { barcode: code })
-    .then(function(d){ showLoading(false); applyLookupResult(d); })
-    .catch(function(e){ showLoading(false); showToast('❌ 検索エラー: ' + e.message, 'error'); });
+  inp.value     = code;
+  inp.className = '';
+  inp.removeAttribute('readonly');
+  document.getElementById('ocrPartHint').textContent    = '修正が必要な場合は直接編集し、マスタ検索してください';
+  document.getElementById('ocrResultWrap').style.display = 'block';
+  document.getElementById('btnMasterSearch').style.display = 'flex';
+  // zunoDisplay にも仮セット（マスタ検索前の参照用）
+  var zi = document.getElementById('zunoDisplay');
+  zi.value     = code;
+  zi.className = 'field-value';
 }
 
-function applyLookupResult(result) {
-  var zuno    = result.zuno   || result.part || '';
-  var hinmei  = result.hinmei || result.name || '';
-  var size    = result.size   || '';
-  var inMaster = (result.inMaster !== undefined)
-    ? result.inMaster
-    : (result.success && hinmei && hinmei !== '（マスタ未登録）');
+/* ============================================================
+   登録情報カード クリア
+============================================================ */
+function clearInfoCard() {
+  currentZuno = null; currentHinmei = ''; currentSize = '';
+  isOcrFlow = false;
 
-  currentZuno = zuno.toUpperCase(); currentHinmei = hinmei; currentSize = size;
+  var ocrInp = document.getElementById('ocrPartInput');
+  ocrInp.value     = '----';
+  ocrInp.className = '';
+  document.getElementById('ocrPartHint').textContent       = 'OCR読み取り後、手修正も可能です';
+  document.getElementById('ocrResultWrap').style.display    = 'none';
+  document.getElementById('btnMasterSearch').style.display  = 'none';
+  document.getElementById('ocrDebugWrap').style.display     = 'none';
 
   var zi = document.getElementById('zunoDisplay');
   var hi = document.getElementById('hinmeiDisplay');
+  zi.value = ''; hi.value = '';
+  zi.className = 'field-value'; hi.className = 'field-value';
+  hi.placeholder = '品名（マスタ検索で自動入力・手入力も可）';
+
+  document.getElementById('seibanInput').value = '';
   var se = document.getElementById('sizeDisplay');
+  se.textContent = '―'; se.className = 'field-value';
 
-  zi.value = currentZuno; zi.className = 'field-value' + (currentZuno ? ' filled' : '');
-  hi.value = inMaster ? (hinmei || '') : (hinmei !== '（マスタ未登録）' ? hinmei : '');
-  hi.className = 'field-value' + (inMaster ? ' filled' : ' warn');
-  hi.placeholder = inMaster ? '品名（マスタ検索で自動入力）' : '（マスタ未登録 — 手入力可）';
-  se.textContent = size || '―'; se.className = 'field-value' + (inMaster ? ' filled' : ' warn');
+  resetDials();
+  document.getElementById('inventoryTypeSelect').value = '';
+  document.getElementById('registerBtn').disabled = true;
 
-  var inp = document.getElementById('ocrPartInput');
-  inp.value = currentZuno; inp.className = inMaster ? '' : 'notfound';
-  document.getElementById('ocrPartHint').textContent = inMaster
-    ? '✅ マスタ確認済 — 数量ダイヤルを合わせてください'
-    : '⚠️ マスタ未登録 — 数量入力後に手動登録できます';
-
-  showToast(inMaster ? '✅ 読取完了！数量ダイヤルを合わせてください' : '⚠️ マスタ未登録の図番です',
-            inMaster ? 'success' : 'updated');
-  updateRegisterBtn();
+  setInfoFieldsEditable(true, true);
+  showToast('🗑️ 登録情報をクリアしました', 'updated');
 }
 
+/* ============================================================
+   登録ボタン 活性判定
+============================================================ */
 function updateRegisterBtn() {
   var zuno  = document.getElementById('zunoDisplay').value.trim();
   var qty   = getDialTotal();
@@ -1540,6 +1634,9 @@ function updateRegisterBtn() {
   document.getElementById('registerBtn').disabled = !(zuno && qty >= 0 && dept && pers && itype);
 }
 
+/* ============================================================
+   データ登録
+============================================================ */
 function registerData() {
   var now = new Date();
   var pad = function(n){ return String(n).padStart(2,'0'); };
@@ -1568,6 +1665,9 @@ function registerData() {
     .catch(function(){ showLoading(false); showToast('❌ 通信エラー', 'error'); });
 }
 
+/* ============================================================
+   モーダル
+============================================================ */
 function openModal(msg, sub) {
   document.getElementById('modalMsg').textContent = msg;
   document.getElementById('modalSub').textContent = sub || '';
@@ -1576,24 +1676,39 @@ function openModal(msg, sub) {
 
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('show');
-  resetAll();
+  // 登録完了後: 場所・担当者は保持、登録情報のみクリア
+  resetInfoOnly();
 }
 
-function resetAll() {
+/* ============================================================
+   リセット系
+   - resetInfoOnly: 登録情報のみクリア（場所・担当者は保持）
+   - resetAll:      再スキャン用（登録情報クリア、場所・担当者は保持）
+============================================================ */
+
+/**
+ * 登録情報のみクリア（場所・担当者は保持）
+ * 登録完了後・再スキャン時に使用
+ */
+function resetInfoOnly() {
   if (cameraActive) stopCamera();
   currentZuno = null; currentHinmei = ''; currentSize = '';
+  isOcrFlow = false;
 
   var ocrInp = document.getElementById('ocrPartInput');
-  ocrInp.value = '----'; ocrInp.className = ''; ocrInp.setAttribute('readonly', true);
-  document.getElementById('ocrPartHint').textContent = 'OCR読み取り後、手修正も可能です';
-  document.getElementById('ocrDebugWrap').style.display = 'none';
-  document.getElementById('btnMasterSearch').style.display = 'none';
+  ocrInp.value     = '----';
+  ocrInp.className = '';
+  document.getElementById('ocrPartHint').textContent       = 'OCR読み取り後、手修正も可能です';
+  document.getElementById('ocrResultWrap').style.display    = 'none';
+  document.getElementById('btnMasterSearch').style.display  = 'none';
+  document.getElementById('ocrDebugWrap').style.display     = 'none';
 
   var zi = document.getElementById('zunoDisplay');
   var hi = document.getElementById('hinmeiDisplay');
   zi.value = ''; hi.value = '';
   zi.className = 'field-value'; hi.className = 'field-value';
-  hi.placeholder = '品名（マスタ検索で自動入力）';
+  hi.placeholder = '品名（マスタ検索で自動入力・手入力も可）';
+
   document.getElementById('seibanInput').value = '';
   var se = document.getElementById('sizeDisplay');
   se.textContent = '―'; se.className = 'field-value';
@@ -1601,9 +1716,22 @@ function resetAll() {
   resetDials();
   document.getElementById('inventoryTypeSelect').value = '';
   document.getElementById('registerBtn').disabled = true;
-  setManualInputEnabled(true);
+  document.getElementById('scanLabel').textContent = '🔍 下のボタンでOCR開始';
+  document.getElementById('scanHint').style.display = 'none';
+
+  setInfoFieldsEditable(true, true);
 }
 
+/**
+ * 再スキャンボタン用（登録情報のみクリア、場所・担当者は保持）
+ */
+function resetAll() {
+  resetInfoOnly();
+}
+
+/* ============================================================
+   UI ヘルパー
+============================================================ */
 function showLoading(show, msg) {
   document.getElementById('loading').classList.toggle('show', show);
   if (msg) document.getElementById('loadingText').textContent = msg;
