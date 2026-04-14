@@ -934,96 +934,127 @@ PLACES.forEach(function(p) {
   _dLastInt[p] = 0;
 });
 
-/* ---------- 音声 ----------
-   iOS Safari の Web Audio ルール:
-   「bufferSource.start() を touchstart/touchend/click などの
-     直接ユーザーインタラクション内で1回呼ぶと AudioContext がアンロックされ、
-     それ以降は touchmove や rAF からでも鳴らせる」
-   ★ サイレントバッファではアンロックされない。実際の音が必要。
-   ★ resume().then() は非同期なので状態管理に使わない。
---------------------------------------- */
-var _audioCtx  = null;
-var _audioReady = false;   // 同期フラグ（Promise.then を使わない）
+/* ========================================================
+   音声システム v4 — HTMLAudioElement プール方式
+   -------------------------------------------------------
+   Web Audio API は iOS/Chrome/Edge で制約が複雑すぎるため廃止。
+   ・PCM WAV を JS で生成 → base64 data URI
+   ・Audio要素を POOL 個作りローテーション（連打対応）
+   ・touchstart / mousedown で play() してiOSをアンロック
+   ・慣性フェーズは setTimeout でスケジュール
+======================================================== */
+var _snd = (function () {
+  var POOL    = 8;
+  var pool    = [];
+  var pidx    = 0;
+  var dataURI = null;
+  var ready   = false;
+  var timers  = [];   // 慣性フェーズのsetTimeoutID
 
-// 共通: tick音のノードを生成して返す（startはしない）
-function _makeTickNodes(gainVal) {
-  var ctx = _audioCtx;
-  var sr  = ctx.sampleRate;
-  var len = Math.floor(sr * 0.014);          // 14ms
-  var buf = ctx.createBuffer(1, len, sr);
-  var d   = buf.getChannelData(0);
-  for (var i = 0; i < len; i++) {
-    d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.13));
-  }
-  var src = ctx.createBufferSource();
-  src.buffer = buf;
-  var hp  = ctx.createBiquadFilter();
-  hp.type = 'highpass';
-  hp.frequency.value = 2200;
-  var g   = ctx.createGain();
-  g.gain.value = gainVal !== undefined ? gainVal : 0.48;
-  src.connect(hp); hp.connect(g); g.connect(ctx.destination);
-  return { src: src, ctx: ctx };
-}
-
-// ★ iOS アンロック: touchstart 内で呼ぶ。実際に音を鳴らしてアンロック完了
-function _unlockAudio() {
-  try {
-    if (!_audioCtx) {
-      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  /* 16ms PCM WAV を生成して data URI を返す */
+  function makeWAV() {
+    var sr = 22050, ms = 16;
+    var n  = (sr * ms / 1000) | 0;   // サンプル数
+    var dl = n * 2;                   // データバイト数（16bit mono）
+    var ab = new ArrayBuffer(44 + dl);
+    var dv = new DataView(ab);
+    function ws(o, s) { for (var i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); }
+    ws(0, 'RIFF'); dv.setUint32(4, 36 + dl, true);
+    ws(8, 'WAVE'); ws(12, 'fmt ');
+    dv.setUint32(16, 16, true);  dv.setUint16(20, 1, true);
+    dv.setUint16(22, 1, true);   dv.setUint32(24, sr, true);
+    dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true);
+    dv.setUint16(34, 16, true);  ws(36, 'data');
+    dv.setUint32(40, dl, true);
+    /* 指数減衰ノイズ → メカニカルクリック音 */
+    for (var i = 0; i < n; i++) {
+      var t = i / n;
+      var v = (Math.random() * 2 - 1) * Math.exp(-t * 26) * 0.74;
+      dv.setInt16(44 + i * 2, Math.max(-32768, Math.min(32767, (v * 32767) | 0)), true);
     }
-    // suspended なら resume（iOS13以降は作成時点で running のことが多い）
-    if (_audioCtx.state === 'suspended') _audioCtx.resume();
-    // ★ 実音を鳴らすことで iOS の Web Audio を確実にアンロック
-    //    （サイレントバッファでは不十分）
-    var o = _makeTickNodes(0.42);
-    o.src.start(o.ctx.currentTime);
-    _audioReady = true;          // 同期で true にする（Promise.then 不要）
-  } catch(e) {}
-}
+    var u8 = new Uint8Array(ab), bin = '';
+    for (var i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
+    return 'data:audio/wav;base64,' + btoa(bin);
+  }
 
-// 即時再生
-function _playTick() {
-  if (!_audioCtx || !_audioReady) return;
-  try {
-    var o = _makeTickNodes(0.48);
-    o.src.start(o.ctx.currentTime);
-  } catch(e) {}
-}
+  /* プール初期化（ページロード時に呼ぶ — ジェスチャー不要） */
+  function init() {
+    if (ready) return;
+    try {
+      dataURI = makeWAV();
+      for (var i = 0; i < POOL; i++) {
+        var a = new Audio(dataURI);
+        a.volume = 0.58;
+        pool.push(a);
+      }
+      ready = true;
+    } catch (e) {}
+  }
 
-// 未来時刻に再生（慣性フェーズ用 — touchend 内で呼ぶこと）
-function _playTickAt(when) {
-  if (!_audioCtx || !_audioReady) return;
-  try {
-    var o = _makeTickNodes(0.45);
-    o.src.start(when);
-  } catch(e) {}
-}
+  /* iOS アンロック兼・最初のカチ音
+     touchstart / mousedown 内で必ず呼ぶ */
+  function unlock() {
+    if (!ready) init();
+    /* iOS: ユーザーのジェスチャー内で play() を一度呼ばないと
+       以降の play() がすべてブロックされる */
+    var a = pool[pidx];
+    pidx = (pidx + 1) % POOL;
+    a.currentTime = 0;
+    var p = a.play();
+    if (p && p.catch) p.catch(function () {});
+  }
 
-// ★ 慣性フェーズのカチカチ音を touchend 時（ユーザーのジェスチャー内）に先行スケジュール
-// iOS はここ（同期コード）でのみ将来の音声スケジュールが許可される
-function _scheduleInertialTicks(place, vel) {
-  if (!_audioCtx || !_audioReady) return;
-  var FRICTION  = 0.89;
-  var MIN_VEL   = 0.005;
-  var FRAME_MS  = 16.67;
-  var simPos    = _dPos[place];
-  var simV      = vel;
-  var now       = _audioCtx.currentTime;
-  var simTime   = now + 0.03;
-  var maxTime   = now + 3.0;
+  /* カチカチ音を即時再生 */
+  function tick() {
+    if (!ready) return;
+    try {
+      var a = pool[pidx];
+      pidx = (pidx + 1) % POOL;
+      a.currentTime = 0;
+      var p = a.play();
+      if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
+  }
 
-  while (Math.abs(simV) > MIN_VEL && simTime < maxTime) {
-    var prevRound = Math.round(simPos);
-    simPos += simV * FRAME_MS;
-    simV   *= FRICTION;
-    simTime += FRAME_MS / 1000;
-    var newRound = Math.round(simPos);
-    if (newRound !== prevRound) {
-      _playTickAt(simTime);
+  /* 慣性フェーズの音を setTimeout でスケジュール
+     ★ AudioContext の将来スケジューリング不要 → iOS 制約を回避 */
+  function scheduleInertial(place, vel) {
+    cancelInertial();
+    if (!ready) return;
+    var FRICTION = 0.89, MIN_VEL = 0.005, FRAME_MS = 16.67;
+    var pos = _dPos[place], v = vel, delay = 30;
+    while (Math.abs(v) > MIN_VEL && delay < 3000) {
+      var prev = Math.round(pos);
+      pos   += v * FRAME_MS;
+      v     *= FRICTION;
+      delay += FRAME_MS;
+      if (Math.round(pos) !== prev) {
+        /* クロージャで delay を固定してキャプチャ */
+        (function (d) {
+          timers.push(setTimeout(tick, d | 0));
+        })(delay);
+      }
     }
   }
-}
+
+  /* 慣性フェーズのタイマーを全キャンセル */
+  function cancelInertial() {
+    for (var i = 0; i < timers.length; i++) clearTimeout(timers[i]);
+    timers = [];
+  }
+
+  /* ページロード時に即座に初期化 */
+  init();
+
+  return { unlock: unlock, tick: tick, scheduleInertial: scheduleInertial, cancelInertial: cancelInertial };
+})();
+
+/* 既存コードとの互換エイリアス */
+function _unlockAudio()                     { _snd.unlock(); }
+function _playTick()                        { _snd.tick(); }
+function _scheduleInertialTicks(p, v)       { _snd.scheduleInertial(p, v); }
+function _cancelInertialTicks()             { _snd.cancelInertial(); }
+
 
 /* ---------- 描画 ---------- */
 function _dRender(place) {
@@ -1142,7 +1173,8 @@ function _bindDial(place) {
   var _prevRoundPos = 0;  // touchmove中の整数通過検知用
 
   function onStart(cy) {
-    // ★ iOS対応: touchstart 内で実音を鳴らして AudioContext をアンロック
+    // ★ touchstart / mousedown 内で unlock（iOS アンロック兼・最初のカチ音）
+    _cancelInertialTicks();   // 前の慣性フェーズのタイマーをリセット
     _unlockAudio();
     if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
     isDrag   = true;
