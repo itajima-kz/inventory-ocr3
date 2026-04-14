@@ -1274,9 +1274,16 @@ function setInfoFieldsEditable(zunoEditable, hinmeiEditable) {
 
 /**
  * 図番 oninput ハンドラ
- * ★ バグ修正: value 置換を廃止 → BSキー正常動作・余分入力防止
+ * ★ 大文字変換: カーソル位置を保存・復元することでBSキー問題を回避しつつ即時大文字化
  */
 function onZunoInput() {
+  var inp   = document.getElementById('zunoDisplay');
+  var pos   = inp.selectionStart;
+  var upper = inp.value.toUpperCase();
+  if (inp.value !== upper) {
+    inp.value = upper;
+    inp.setSelectionRange(pos, pos);
+  }
   currentZuno = null;
   updateRegisterBtn();
 }
@@ -1313,13 +1320,18 @@ function doManualMasterSearch() {
 
 /**
  * OCR結果 oninput ハンドラ
- * ★ バグ修正: value 置換を廃止 → BSキー正常動作
+ * ★ 大文字変換: カーソル位置を保存・復元することでBSキー問題を回避しつつ即時大文字化
  */
 function onOcrPartEdit() {
-  var inp = document.getElementById('ocrPartInput');
+  var inp   = document.getElementById('ocrPartInput');
+  var pos   = inp.selectionStart;
+  var upper = inp.value.toUpperCase();
+  if (inp.value !== upper) {
+    inp.value = upper;
+    inp.setSelectionRange(pos, pos);
+  }
   inp.className = 'editing';
   document.getElementById('ocrPartHint').textContent = '✎ 編集中 — 修正後にマスタ検索ボタンを押してください';
-  // 内容があればマスタ検索ボタンを表示
   var hasContent = inp.value.trim() && inp.value.trim() !== '----';
   document.getElementById('btnMasterSearch').style.display = hasContent ? 'flex' : 'none';
 }
