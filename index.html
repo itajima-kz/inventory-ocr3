@@ -61,39 +61,43 @@
       flex-direction: column;
       max-width: 520px;
       margin: 0 auto;
-      padding: 0 0 64px;
+      padding: 0 0 56px;
     }
 
-    /* ===== ヘッダー ===== */
+    /* ===== ヘッダー: 横並びレイアウトに変更 ===== */
     .app-header {
       background: linear-gradient(135deg, var(--header-from) 0%, var(--header-to) 100%);
       color: #fff;
-      padding: 12px 16px 10px;
+      padding: 8px 16px;
       border-radius: 0 0 var(--radius) var(--radius);
       box-shadow: 0 4px 20px rgba(10,30,100,0.30);
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
       position: sticky;
       top: 0;
       z-index: 10;
     }
 
     .app-header h1 {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.07em;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
+      gap: 5px;
       text-shadow: 0 2px 4px rgba(0,0,0,0.20);
+      white-space: nowrap;
     }
 
     .app-header .subtitle {
-      font-size: 13px;
-      opacity: 0.90;
-      margin-top: 3px;
+      font-size: 12px;
+      opacity: 0.92;
       letter-spacing: 0.04em;
       font-weight: 600;
+      text-align: right;
+      white-space: nowrap;
     }
 
     /* ===== カード共通 ===== */
@@ -101,18 +105,18 @@
       background: var(--surface);
       border-radius: var(--radius);
       box-shadow: var(--shadow-sm);
-      padding: 14px 14px 12px;
-      margin: 8px 10px 0;
+      padding: 11px 12px 10px;
+      margin: 6px 8px 0;
       border: 2px solid var(--blue-lt);
       animation: fadeUp 0.3s ease both;
     }
 
     .card-label {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       letter-spacing: 0.06em;
       color: var(--blue-dk);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -121,8 +125,8 @@
     .card-label::before {
       content: '';
       display: inline-block;
-      width: 5px;
-      height: 16px;
+      width: 4px;
+      height: 14px;
       background: linear-gradient(180deg, var(--blue), var(--cyan));
       border-radius: 3px;
     }
@@ -139,12 +143,12 @@
 
     .operator-clear-btn {
       position: absolute;
-      top: 12px;
-      right: 14px;
+      top: 10px;
+      right: 12px;
       font-family: var(--font);
       font-size: 11px;
       font-weight: 700;
-      padding: 4px 8px;
+      padding: 3px 7px;
       border: 2px solid #e07800;
       border-radius: var(--radius-xs);
       background: #fff8ee;
@@ -174,13 +178,13 @@
     .scan-card {
       background: linear-gradient(145deg, #f4f7fd, #e4ecfc);
       border: 2px solid var(--blue-mid);
-      padding: 14px 14px 12px;
+      padding: 11px 12px 10px;
     }
 
     .scan-square {
       position: relative;
       width: 100%;
-      aspect-ratio: 2.6 / 1;
+      aspect-ratio: 2.8 / 1;
       background: rgba(255,255,255,0.92);
       border: 2px solid var(--blue-lt);
       border-radius: var(--radius-sm);
@@ -247,24 +251,24 @@
 
     .qr-corner {
       position: absolute;
-      width: 24px;
-      height: 24px;
+      width: 22px;
+      height: 22px;
       border-color: var(--blue);
       border-style: solid;
       border-width: 0;
       z-index: 5;
       transition: border-color 0.2s;
     }
-    .qr-corner.tl { top:8px;    left:8px;   border-top-width:3px;    border-left-width:3px;   border-radius:5px 0 0 0; }
-    .qr-corner.tr { top:8px;    right:8px;  border-top-width:3px;    border-right-width:3px;  border-radius:0 5px 0 0; }
-    .qr-corner.bl { bottom:8px; left:8px;   border-bottom-width:3px; border-left-width:3px;   border-radius:0 0 0 5px; }
-    .qr-corner.br { bottom:8px; right:8px;  border-bottom-width:3px; border-right-width:3px;  border-radius:0 0 5px 0; }
+    .qr-corner.tl { top:7px;    left:7px;   border-top-width:3px;    border-left-width:3px;   border-radius:5px 0 0 0; }
+    .qr-corner.tr { top:7px;    right:7px;  border-top-width:3px;    border-right-width:3px;  border-radius:0 5px 0 0; }
+    .qr-corner.bl { bottom:7px; left:7px;   border-bottom-width:3px; border-left-width:3px;   border-radius:0 0 0 5px; }
+    .qr-corner.br { bottom:7px; right:7px;  border-bottom-width:3px; border-right-width:3px;  border-radius:0 0 5px 0; }
 
     .scan-square.camera-on.mode-ocr .qr-corner { border-color: #a855f7; }
     .scan-square.camera-on .scan-icon { display: none; }
 
     .scan-icon {
-      font-size: 40px;
+      font-size: 36px;
       line-height: 1;
       opacity: 0.16;
       user-select: none;
@@ -274,12 +278,12 @@
     }
 
     .scan-label {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--text-mid);
       text-align: center;
-      margin-top: 8px;
-      padding: 6px 10px;
+      margin-top: 6px;
+      padding: 5px 10px;
       background: var(--surface2);
       border: 1.5px solid var(--blue-lt);
       border-radius: var(--radius-xs);
@@ -290,15 +294,15 @@
     #ocrDebugCanvas { max-width: 100%; border: 1px solid #ccc; border-radius: 4px; }
 
     .btn-cam-start {
-      margin-top: 8px;
+      margin-top: 7px;
       width: 100%;
       font-family: var(--font);
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       letter-spacing: 0.05em;
       border: none;
       border-radius: var(--radius-sm);
-      padding: 13px 12px;
+      padding: 11px 12px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -315,15 +319,15 @@
     }
 
     #btnCameraStop {
-      margin-top: 8px;
+      margin-top: 7px;
       width: 100%;
       font-family: var(--font);
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       letter-spacing: 0.05em;
       border: none;
       border-radius: var(--radius-sm);
-      padding: 13px 12px;
+      padding: 11px 12px;
       cursor: pointer;
       display: none;
       align-items: center;
@@ -344,9 +348,9 @@
 
     .scan-hint {
       text-align: center;
-      font-size: 13px;
+      font-size: 12px;
       color: var(--text-mid);
-      margin-top: 6px;
+      margin-top: 5px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -357,8 +361,8 @@
     /* ===== OCR読み取り結果エリア ===== */
     .ocr-result-wrap {
       display: none;
-      margin-top: 8px;
-      padding: 10px;
+      margin-top: 7px;
+      padding: 8px;
       background: #1a1a2e;
       border-radius: var(--radius-xs);
     }
@@ -366,7 +370,7 @@
     .ocr-part-label { font-size: 10px; color: #888; margin-bottom: 3px; }
     #ocrPartInput {
       width: 100%;
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 800;
       text-align: center;
       letter-spacing: 2px;
@@ -374,7 +378,7 @@
       color: #00ff88;
       border: 2px solid transparent;
       border-radius: 6px;
-      padding: 6px;
+      padding: 5px;
       outline: none;
       font-family: monospace;
       -webkit-appearance: none;
@@ -386,15 +390,15 @@
 
     /* ===== 登録情報エリア ===== */
     .field-label {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--blue-dk);
       font-weight: 700;
       letter-spacing: 0.04em;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
       display: block;
     }
     .field-label .label-sub {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 500;
       color: var(--text-mid);
       margin-left: 4px;
@@ -404,17 +408,16 @@
       background: var(--surface2);
       border: 2px solid var(--blue-lt);
       border-radius: var(--radius-xs);
-      padding: 9px 12px;
-      font-size: 16px;
+      padding: 7px 10px;
+      font-size: 15px;
       color: var(--text);
-      min-height: 42px;
+      min-height: 38px;
       display: flex;
       align-items: center;
       word-break: break-all;
       font-weight: 500;
     }
 
-    /* ===== input / textarea 共通フィールドスタイル ★textarea追加 ===== */
     input.field-value,
     textarea.field-value {
       display: block;
@@ -439,7 +442,7 @@
     textarea.field-value::placeholder {
       color: #a0b0cc;
       font-weight: 400;
-      font-size: 13px;
+      font-size: 12px;
     }
     .field-value.filled,
     input.field-value.filled,
@@ -457,28 +460,24 @@
       color: var(--warn);
     }
 
-    /* ===== textarea 専用スタイル ===== */
     textarea.field-value {
-      resize: none;         /* ユーザーによるリサイズ禁止 */
-      line-height: 1.5;
-      overflow: hidden;     /* スクロールバー非表示 */
+      resize: none;
+      line-height: 1.45;
+      overflow: hidden;
     }
 
-    /* ===== 品名欄: PC は1行、スマホは2行 ★ ===== */
-    /* PC（521px以上）: 1行分の高さに固定 */
     @media (min-width: 521px) {
       textarea#hinmeiDisplay {
-        height: 42px;
-        min-height: 42px;
+        height: 38px;
+        min-height: 38px;
         overflow: hidden;
-        white-space: pre;    /* 折り返し禁止 */
+        white-space: pre;
       }
     }
-    /* スマホ（520px以下）: 2行分の高さ・自動折り返し */
     @media (max-width: 520px) {
       textarea#hinmeiDisplay {
-        min-height: 70px;    /* 16px × 1.5 × 2行 + padding(18px) ≈ 66px、余裕を持って70px */
-        white-space: normal; /* 自動折り返し */
+        min-height: 64px;
+        white-space: normal;
         word-break: break-all;
       }
     }
@@ -486,17 +485,17 @@
     #seibanInput {
       letter-spacing: 3px;
       font-family: monospace;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
     }
 
-    /* ===== ダイヤルシステム ===== */
+    /* ===== ダイヤルシステム: 高さを約14%縮小 ===== */
     .dial-section-label {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--blue-dk);
       font-weight: 700;
       letter-spacing: 0.04em;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
 
     .dial-container {
@@ -504,16 +503,16 @@
       align-items: flex-start;
       justify-content: center;
       gap: 2px;
-      padding: 0 0 4px;
+      padding: 0 0 3px;
     }
 
     .dial-group {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       flex: 1;
-      max-width: 72px;
+      max-width: 68px;
     }
 
     .dial-unit-label {
@@ -523,14 +522,15 @@
       letter-spacing: 0.04em;
     }
 
+    /* 高さ 160px → 138px（約14%縮小） */
     .dial-wheel {
       position: relative;
       width: 100%;
-      max-width: 68px;
-      height: 160px;
+      max-width: 64px;
+      height: 138px;
       overflow: hidden;
       background: linear-gradient(180deg, #060d1e 0%, #091528 50%, #060d1e 100%);
-      border-radius: 14px;
+      border-radius: 12px;
       border: 2px solid var(--cyan);
       touch-action: none;
       user-select: none;
@@ -554,11 +554,11 @@
     .dial-highlight {
       position: absolute;
       top: 50%;
-      left: 5px; right: 5px;
-      height: 46px;
+      left: 4px; right: 4px;
+      height: 40px;
       transform: translateY(-50%);
       border: 2px solid rgba(64,168,200,0.75);
-      border-radius: 8px;
+      border-radius: 7px;
       background: rgba(64,168,200,0.07);
       pointer-events: none;
       z-index: 5;
@@ -573,28 +573,28 @@
 
     .dial-total {
       text-align: center;
-      margin-top: 10px;
-      font-size: 24px;
+      margin-top: 8px;
+      font-size: 22px;
       font-weight: 800;
       color: var(--cyan-dk);
       letter-spacing: 2px;
       background: var(--cyan-lt);
       border: 2px solid var(--cyan);
       border-radius: var(--radius-xs);
-      padding: 8px;
+      padding: 6px;
     }
     .dial-total span {
-      font-size: 22px;
+      font-size: 20px;
       color: var(--text-mid);
       font-weight: 500;
-      margin-left: 5px;
+      margin-left: 4px;
     }
 
     .dial-sep {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 800;
       color: rgba(200,216,248,0.5);
-      padding-top: 28px;
+      padding-top: 24px;
       flex: 0 0 auto;
       align-self: flex-start;
     }
@@ -603,18 +603,18 @@
     select {
       width: 100%;
       font-family: var(--font);
-      font-size: 16px;
+      font-size: 15px;
       color: var(--text);
       background: var(--surface);
       border: 2px solid var(--blue-lt);
       border-radius: var(--radius-xs);
-      padding: 10px 40px 10px 12px;
+      padding: 8px 38px 8px 10px;
       outline: none;
       -webkit-appearance: none;
       appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%232e6be0' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 12px center;
+      background-position: right 10px center;
       cursor: pointer;
       font-weight: 500;
     }
@@ -626,19 +626,19 @@
     /* ===== ボタン行 ===== */
     .btn-row {
       display: flex;
-      gap: 10px;
-      margin: 10px 10px 0;
+      gap: 8px;
+      margin: 8px 8px 0;
     }
 
     .btn {
       flex: 1;
       font-family: var(--font);
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
       letter-spacing: 0.05em;
       border: none;
       border-radius: var(--radius);
-      padding: 15px 10px;
+      padding: 13px 10px;
       cursor: pointer;
       transition: transform 0.12s, box-shadow 0.2s, opacity 0.2s;
       display: flex;
@@ -681,19 +681,19 @@
     .modal-box {
       background: #fff;
       border-radius: 18px;
-      padding: 24px 22px;
+      padding: 22px 20px;
       max-width: 300px;
       width: 88%;
       text-align: center;
       box-shadow: 0 10px 36px rgba(0,0,0,0.22);
     }
-    .modal-icon  { font-size: 44px; margin-bottom: 10px; }
-    .modal-msg   { font-size: 18px; font-weight: 800; color: #1a6e1a; margin-bottom: 6px; }
-    .modal-sub   { font-size: 12px; color: #666; margin-bottom: 18px; }
+    .modal-icon  { font-size: 40px; margin-bottom: 8px; }
+    .modal-msg   { font-size: 17px; font-weight: 800; color: #1a6e1a; margin-bottom: 5px; }
+    .modal-sub   { font-size: 12px; color: #666; margin-bottom: 16px; }
     .modal-ok {
       width: 100%;
-      padding: 12px;
-      font-size: 16px;
+      padding: 11px;
+      font-size: 15px;
       font-weight: 700;
       background: linear-gradient(135deg, #00b09b, #5cb85c);
       border: none;
@@ -706,13 +706,13 @@
     /* ===== トースト ===== */
     #toast {
       position: fixed;
-      bottom: 20px;
+      bottom: 16px;
       left: 50%;
       transform: translateX(-50%) translateY(70px);
       color: #fff;
-      padding: 11px 20px;
+      padding: 10px 18px;
       border-radius: var(--radius);
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
       max-width: 340px;
       width: calc(100% - 32px);
@@ -739,22 +739,22 @@
       align-items: center;
       justify-content: center;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       backdrop-filter: blur(4px);
     }
     #loading.show { display: flex; }
     .spinner {
-      width: 46px; height: 46px;
+      width: 42px; height: 42px;
       border: 4px solid var(--blue-lt);
       border-top-color: var(--blue);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-text { font-size: 16px; color: var(--blue-dk); font-weight: 700; }
+    .loading-text { font-size: 15px; color: var(--blue-dk); font-weight: 700; }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(8px); }
+      from { opacity: 0; transform: translateY(7px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
@@ -830,7 +830,6 @@
       <canvas id="ocrDebugCanvas"></canvas>
     </div>
 
-    <!-- OCR読み取り結果 + マスタ検索ボタン（OCRフロー用） -->
     <div class="ocr-result-wrap" id="ocrResultWrap">
       <div class="ocr-part-label">読み取った図番（修正可）</div>
       <input id="ocrPartInput" type="text" value="----"
@@ -840,7 +839,6 @@
       <div class="ocr-part-hint" id="ocrPartHint">OCR読み取り後、手修正も可能です</div>
     </div>
 
-    <!-- マスタ検索ボタン（OCRフロー専用） -->
     <button id="btnMasterSearch" class="btn-cam-start btn-master-search"
             onclick="doMasterSearch()" style="display:none;">
       🔎 マスタ検索
@@ -852,7 +850,6 @@
     <div class="card-label">登録情報</div>
     <button class="operator-clear-btn" onclick="clearInfoCard()">クリア</button>
 
-    <!-- 図番 -->
     <div style="margin-bottom:4px;">
       <span class="field-label">図番</span>
       <input type="text" id="zunoDisplay" class="field-value"
@@ -861,26 +858,19 @@
         onblur="onZunoBlur()">
     </div>
 
-    <!-- 手入力フロー用マスタ検索ボタン -->
     <button id="btnManualMasterSearch" class="btn-cam-start btn-master-search"
-            onclick="doManualMasterSearch()" style="display:none; margin-bottom:8px;">
+            onclick="doManualMasterSearch()" style="display:none; margin-bottom:7px;">
       🔎 マスタ検索
     </button>
 
-    <!-- 品名
-         ★ input → textarea に変更
-            スマホ: 2行表示（min-height:70px / word-break:break-all）
-            PC   : 1行表示（height:42px / white-space:pre）
-    -->
-    <div style="margin-bottom:7px;">
+    <div style="margin-bottom:6px;">
       <span class="field-label">品名</span>
       <textarea id="hinmeiDisplay" class="field-value"
         placeholder="品名（マスタ検索で自動入力・手入力も可）"
         oninput="updateRegisterBtn()"></textarea>
     </div>
 
-    <!-- 製番 -->
-    <div style="margin-bottom:7px;">
+    <div style="margin-bottom:6px;">
       <span class="field-label">製番<span class="label-sub">（任意・9桁数字）</span></span>
       <input type="text" id="seibanInput" class="field-value"
         placeholder="例: 012345678"
@@ -889,7 +879,6 @@
         oninput="this.value=this.value.replace(/[^0-9]/g,'');updateRegisterBtn()">
     </div>
 
-    <!-- サイズ（非表示） -->
     <div style="display:none;">
       <span class="field-label">サイズ</span>
       <div class="field-value" id="sizeDisplay">―</div>
@@ -934,8 +923,7 @@
       <div class="dial-total" id="dialTotal">0 <span>個</span></div>
     </div>
 
-    <!-- 在庫区分 -->
-    <div style="margin-top:10px;">
+    <div style="margin-top:8px;">
       <span class="field-label">在庫区分</span>
       <select id="inventoryTypeSelect" onchange="updateRegisterBtn()">
         <option value="">― 選択してください ―</option>
@@ -961,10 +949,10 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbyGFG6DnMxgM_9tksHnpSg9HnbpX-9uSwSwJ2gUKufmOt3244a2ZtfmUKgy3_SAqyg/exec';
 
 /* ============================================================
-   ダイヤルシステム
+   ダイヤルシステム: ITEM_H=40, WHEEL_H=138
 ============================================================ */
-var ITEM_H  = 46;
-var WHEEL_H = 160;
+var ITEM_H  = 40;
+var WHEEL_H = 138;
 var DCENTER = WHEEL_H / 2 - ITEM_H / 2;
 var PLACES  = [1000, 100, 10, 1];
 
@@ -991,7 +979,7 @@ function _dRender(place) {
     var absD    = Math.abs(dist);
     var scale   = Math.max(0.60, 1 - absD * 0.175);
     var opacity = Math.max(0.18, 1 - absD * 0.48);
-    var fsize   = absD < 0.5 ? 34 : (absD < 1.5 ? 23 : 16);
+    var fsize   = absD < 0.5 ? 30 : (absD < 1.5 ? 20 : 14);
     var color   = absD < 0.5
       ? '#00ff88'
       : 'rgba(64,168,200,' + opacity.toFixed(2) + ')';
