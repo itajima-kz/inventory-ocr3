@@ -414,7 +414,9 @@
       font-weight: 500;
     }
 
-    input.field-value {
+    /* ===== input / textarea 共通フィールドスタイル ★textarea追加 ===== */
+    input.field-value,
+    textarea.field-value {
       display: block;
       width: 100%;
       font-family: var(--font);
@@ -422,27 +424,63 @@
       -webkit-appearance: none;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
-    input.field-value:not([readonly]):focus {
+    input.field-value:not([readonly]):focus,
+    textarea.field-value:not([readonly]):focus {
       border-color: var(--blue);
       box-shadow: 0 0 0 3px rgba(46,107,224,0.14);
     }
-    input.field-value[readonly] {
+    input.field-value[readonly],
+    textarea.field-value[readonly] {
       cursor: default;
       opacity: 0.85;
       background: var(--surface2);
     }
-    input.field-value::placeholder { color: #a0b0cc; font-weight: 400; font-size: 22px; }
-
-    .field-value.filled, input.field-value.filled {
+    input.field-value::placeholder,
+    textarea.field-value::placeholder {
+      color: #a0b0cc;
+      font-weight: 400;
+      font-size: 13px;
+    }
+    .field-value.filled,
+    input.field-value.filled,
+    textarea.field-value.filled {
       background: var(--filled-lt);
       border-color: var(--filled);
       color: var(--filled);
       font-weight: 700;
     }
-    .field-value.warn, input.field-value.warn {
+    .field-value.warn,
+    input.field-value.warn,
+    textarea.field-value.warn {
       background: var(--warn-lt);
       border-color: var(--warn);
       color: var(--warn);
+    }
+
+    /* ===== textarea 専用スタイル ===== */
+    textarea.field-value {
+      resize: none;         /* ユーザーによるリサイズ禁止 */
+      line-height: 1.5;
+      overflow: hidden;     /* スクロールバー非表示 */
+    }
+
+    /* ===== 品名欄: PC は1行、スマホは2行 ★ ===== */
+    /* PC（521px以上）: 1行分の高さに固定 */
+    @media (min-width: 521px) {
+      textarea#hinmeiDisplay {
+        height: 42px;
+        min-height: 42px;
+        overflow: hidden;
+        white-space: pre;    /* 折り返し禁止 */
+      }
+    }
+    /* スマホ（520px以下）: 2行分の高さ・自動折り返し */
+    @media (max-width: 520px) {
+      textarea#hinmeiDisplay {
+        min-height: 70px;    /* 16px × 1.5 × 2行 + padding(18px) ≈ 66px、余裕を持って70px */
+        white-space: normal; /* 自動折り返し */
+        word-break: break-all;
+      }
     }
 
     #seibanInput {
@@ -823,19 +861,22 @@
         onblur="onZunoBlur()">
     </div>
 
-    <!-- 手入力フロー用マスタ検索ボタン
-         ★ 起動時は非表示。図番入力時かつカメラ未起動の場合のみ表示 -->
+    <!-- 手入力フロー用マスタ検索ボタン -->
     <button id="btnManualMasterSearch" class="btn-cam-start btn-master-search"
             onclick="doManualMasterSearch()" style="display:none; margin-bottom:8px;">
       🔎 マスタ検索
     </button>
 
-    <!-- 品名 -->
+    <!-- 品名
+         ★ input → textarea に変更
+            スマホ: 2行表示（min-height:70px / word-break:break-all）
+            PC   : 1行表示（height:42px / white-space:pre）
+    -->
     <div style="margin-bottom:7px;">
       <span class="field-label">品名</span>
-      <input type="text" id="hinmeiDisplay" class="field-value"
+      <textarea id="hinmeiDisplay" class="field-value"
         placeholder="品名（マスタ検索で自動入力・手入力も可）"
-        oninput="updateRegisterBtn()">
+        oninput="updateRegisterBtn()"></textarea>
     </div>
 
     <!-- 製番 -->
@@ -1103,7 +1144,7 @@ window.addEventListener('load', function () {
   initDials();
   restoreOperator();
   setInfoFieldsEditable(true, true);
-  updateManualSearchBtn();  // ★起動時: 図番空なので非表示
+  updateManualSearchBtn();
 });
 
 function updateDateTime() {
@@ -1232,13 +1273,7 @@ function updateLockBadge() {
 
 /* ============================================================
    図番フィールド制御
-   ★ setInfoFieldsEditable から btnManualMasterSearch の制御を分離
-      updateManualSearchBtn() で一元管理
 ============================================================ */
-
-/**
- * 図番・品名の readonly 制御のみ行う
- */
 function setInfoFieldsEditable(zunoEditable, hinmeiEditable) {
   var zi = document.getElementById('zunoDisplay');
   var hi = document.getElementById('hinmeiDisplay');
@@ -1246,21 +1281,12 @@ function setInfoFieldsEditable(zunoEditable, hinmeiEditable) {
   if (hinmeiEditable) { hi.removeAttribute('readonly'); } else { hi.setAttribute('readonly', true); }
 }
 
-/**
- * 手入力用マスタ検索ボタンの表示制御（一元管理）
- * 表示条件: カメラ未起動 かつ 図番に入力あり
- * ★ OCRフロー中（カメラ停止直後にOCR結果が入った状態）は
- *    setOcrResult() から呼ばれないため、OCR専用ボタンのみ表示される
- */
 function updateManualSearchBtn() {
   var code = document.getElementById('zunoDisplay').value.trim();
   document.getElementById('btnManualMasterSearch').style.display =
     (!cameraActive && code) ? 'flex' : 'none';
 }
 
-/**
- * 図番 oninput ハンドラ
- */
 function onZunoInput() {
   var inp   = document.getElementById('zunoDisplay');
   var pos   = inp.selectionStart;
@@ -1271,23 +1297,17 @@ function onZunoInput() {
   }
   currentZuno = null;
   updateRegisterBtn();
-  updateManualSearchBtn();  // ★入力のたびに表示/非表示を更新
+  updateManualSearchBtn();
 }
 
-/**
- * 図番 onblur ハンドラ
- */
 function onZunoBlur() {
   var inp  = document.getElementById('zunoDisplay');
   var code = inp.value.trim().toUpperCase();
   inp.value = code;
   updateRegisterBtn();
-  updateManualSearchBtn();  // ★フォーカスアウト時も更新
+  updateManualSearchBtn();
 }
 
-/**
- * 手入力フロー用マスタ検索
- */
 function doManualMasterSearch() {
   var code = document.getElementById('zunoDisplay').value.trim().toUpperCase();
   if (!code) { showToast('⚠️ 図番を入力してください', 'error'); return; }
@@ -1337,9 +1357,6 @@ function doMasterSearch() {
     .catch(function(e){ showLoading(false); showToast('❌ 検索エラー: ' + e.message, 'error'); });
 }
 
-/**
- * マスタ検索結果を画面に反映
- */
 function applyLookupResult(result, fromOcr) {
   var zuno     = (result.zuno   || result.part || '').toUpperCase();
   var hinmei   = result.hinmei || result.name || '';
@@ -1374,7 +1391,6 @@ function applyLookupResult(result, fromOcr) {
   se.textContent = size || '―';
   se.className   = 'field-value' + (inMaster ? ' filled' : ' warn');
 
-  // フローによる readonly 制御
   if (fromOcr && inMaster) {
     setInfoFieldsEditable(false, false);
     isOcrFlow = true;
@@ -1386,16 +1402,10 @@ function applyLookupResult(result, fromOcr) {
     isOcrFlow = false;
   }
 
-  // ★ OCRフロー時はカメラ停止済みだが手入力用ボタンは非表示のまま
-  // 手入力フロー時は図番の有無に応じて表示（検索後も図番は入っているので表示される）
-  // いずれも updateManualSearchBtn() で正しく制御される
-  // ただし OCRフロー時は setOcrResult() が zunoDisplay に仮セットするため
-  // ここで呼ぶと表示されてしまう → fromOcr 時は呼ばない
   if (!fromOcr) {
     updateManualSearchBtn();
   }
 
-  // OCRフロー: ocrPartInput の状態更新
   if (fromOcr) {
     var ocrInp = document.getElementById('ocrPartInput');
     ocrInp.value     = zuno || ocrInp.value;
@@ -1430,7 +1440,7 @@ function startCamera() {
   .then(function(stream){
     cameraStream = stream;
     cameraActive = true;
-    updateManualSearchBtn();  // ★カメラON → 手入力用ボタンを非表示
+    updateManualSearchBtn();
     var video = document.getElementById('cameraVideo');
     video.srcObject = stream; video.style.display = 'block';
     document.getElementById('btnCameraStart').style.display = 'none';
@@ -1467,10 +1477,6 @@ function stopCamera() {
   ocrRunning = false;
   document.getElementById('scanLabel').textContent = '🔍 下のボタンでOCR開始';
   setInfoFieldsEditable(true, true);
-  // ★ カメラOFF後: 手動停止の場合は図番があればボタン表示
-  // OCR読取後は setOcrResult() が呼ばれ zunoDisplay に値が入るが、
-  // その後 doOcrTick() が stopCamera() を呼ぶため、ここでは updateManualSearchBtn は呼ばない
-  // （setOcrResult 内で意図的に呼ばないことで OCR専用ボタンのみ表示する）
 }
 
 function startOcrLoop() {
@@ -1553,11 +1559,6 @@ function captureOcr() {
   return out.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
 }
 
-/**
- * OCR結果を ocrPartInput に表示し、OCR専用マスタ検索ボタンを表示
- * ★ ここでは updateManualSearchBtn() を意図的に呼ばない
- *    → 手入力用ボタンは非表示のまま（OCR専用ボタンのみ表示）
- */
 function setOcrResult(code) {
   code = code.trim().toUpperCase();
   var inp  = document.getElementById('ocrPartInput');
@@ -1570,7 +1571,6 @@ function setOcrResult(code) {
   var zi = document.getElementById('zunoDisplay');
   zi.value     = code;
   zi.className = 'field-value';
-  // ★ updateManualSearchBtn() を呼ばないことで手入力用ボタンは非表示を維持
 }
 
 /* ============================================================
@@ -1603,7 +1603,7 @@ function clearInfoCard() {
   document.getElementById('registerBtn').disabled = true;
 
   setInfoFieldsEditable(true, true);
-  updateManualSearchBtn();  // ★図番が空になったので非表示
+  updateManualSearchBtn();
   showToast('🗑️ 登録情報をクリアしました', 'updated');
 }
 
@@ -1697,7 +1697,7 @@ function resetInfoOnly() {
   document.getElementById('scanHint').style.display = 'none';
 
   setInfoFieldsEditable(true, true);
-  updateManualSearchBtn();  // ★図番が空になったので非表示
+  updateManualSearchBtn();
 }
 
 function resetAll() {
