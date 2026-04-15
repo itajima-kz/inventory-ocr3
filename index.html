@@ -795,12 +795,6 @@
     <!-- OCR読み取り結果 + マスタ検索ボタン（OCRフロー用） -->
     <div class="ocr-result-wrap" id="ocrResultWrap">
       <div class="ocr-part-label">読み取った図番（修正可）</div>
-      <!--
-        ★ バグ修正ポイント:
-        - oninput でのvalue置換を廃止 → BSキー正常動作・余分入力防止
-        - onblur で大文字正規化のみ実施
-        - readonly は OCR 読み取り前のみ
-      -->
       <input id="ocrPartInput" type="text" value="----"
         placeholder="OCR読取待ち..."
         oninput="onOcrPartEdit()"
@@ -823,12 +817,6 @@
     <!-- 図番 -->
     <div style="margin-bottom:4px;">
       <span class="field-label">図番</span>
-      <!--
-        ★ バグ修正ポイント:
-        - oninput での文字置換を廃止（BSキー無効・余分入力の原因を除去）
-        - onblur でのみ大文字正規化
-        - スキャンなし時は自由に手入力可能
-      -->
       <input type="text" id="zunoDisplay" class="field-value"
         placeholder="図番を直接入力できます"
         oninput="onZunoInput()"
@@ -928,7 +916,7 @@
 <div id="toast"></div>
 
 <script>
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbxFYwYko8L09Ao3e9EhmknHbO1rJqfRpXZScMcNIVB4PiCMlQGNcW8DkqL-Cx1g311QFw/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbwJsTc-rwOhDDrVQPhbzQHYFVXkBRAv___1wLVbzkuwgv38aMXxxxyNxfwNrMRcfUXo1g/exec';
 
 /* ============================================================
    ダイヤルシステム
@@ -1085,9 +1073,11 @@ function getDialTotal() {
   return dialValues[1000] * 1000 + dialValues[100] * 100 + dialValues[10] * 10 + dialValues[1];
 }
 
+/* ★ 単位を currentUnit から動的表示 */
 function renderDialTotal() {
   var total = getDialTotal();
-  document.getElementById('dialTotal').innerHTML = '<strong>' + total.toLocaleString() + '</strong> <span>個</span>';
+  document.getElementById('dialTotal').innerHTML =
+    '<strong>' + total.toLocaleString() + '</strong> <span>' + currentUnit + '</span>';
 }
 
 /* ============================================================
@@ -1100,7 +1090,7 @@ var ocrRunning    = false;
 var currentZuno   = null;
 var currentHinmei = '';
 var currentSize   = '';
-// OCRフロー中かどうか（マスタ検索時の挙動分岐に使用）
+var currentUnit   = '個';   // ★追加: デフォルト「個」、マスタ検索で上書き
 var isOcrFlow     = false;
 
 /* ============================================================
@@ -1242,15 +1232,7 @@ function updateLockBadge() {
 
 /* ============================================================
    図番フィールド制御
-   ★ バグ修正: setInfoFieldsEditable で readonly/editable を管理
-              oninput での value 置換を廃止
 ============================================================ */
-
-/**
- * 図番・品名の編集可否を設定
- * @param {boolean} zunoEditable - 図番が編集可能か
- * @param {boolean} hinmeiEditable - 品名が編集可能か
- */
 function setInfoFieldsEditable(zunoEditable, hinmeiEditable) {
   var zi = document.getElementById('zunoDisplay');
   var hi = document.getElementById('hinmeiDisplay');
@@ -1268,14 +1250,9 @@ function setInfoFieldsEditable(zunoEditable, hinmeiEditable) {
     hi.setAttribute('readonly', true);
   }
 
-  // 手入力用マスタ検索ボタンは、図番が編集可能な時だけ有効表示
   mb.style.display = zunoEditable ? 'flex' : 'none';
 }
 
-/**
- * 図番 oninput ハンドラ
- * ★ 大文字変換: カーソル位置を保存・復元することでBSキー問題を回避しつつ即時大文字化
- */
 function onZunoInput() {
   var inp   = document.getElementById('zunoDisplay');
   var pos   = inp.selectionStart;
@@ -1288,10 +1265,6 @@ function onZunoInput() {
   updateRegisterBtn();
 }
 
-/**
- * 図番 onblur ハンドラ
- * ★ バグ修正: 大文字正規化のみ。自動マスタ検索は廃止（手動ボタンで行う）
- */
 function onZunoBlur() {
   var inp  = document.getElementById('zunoDisplay');
   var code = inp.value.trim().toUpperCase();
@@ -1299,11 +1272,6 @@ function onZunoBlur() {
   updateRegisterBtn();
 }
 
-/**
- * 手入力フロー用マスタ検索
- * ヒット: 品名を自動入力（修正可）、図番はそのまま（修正可）
- * 未ヒット: 品名欄を手入力促す状態にする（修正可）
- */
 function doManualMasterSearch() {
   var code = document.getElementById('zunoDisplay').value.trim().toUpperCase();
   if (!code) { showToast('⚠️ 図番を入力してください', 'error'); return; }
@@ -1317,11 +1285,6 @@ function doManualMasterSearch() {
 /* ============================================================
    OCR関連
 ============================================================ */
-
-/**
- * OCR結果 oninput ハンドラ
- * ★ 大文字変換: カーソル位置を保存・復元することでBSキー問題を回避しつつ即時大文字化
- */
 function onOcrPartEdit() {
   var inp   = document.getElementById('ocrPartInput');
   var pos   = inp.selectionStart;
@@ -1336,10 +1299,6 @@ function onOcrPartEdit() {
   document.getElementById('btnMasterSearch').style.display = hasContent ? 'flex' : 'none';
 }
 
-/**
- * OCR結果 onblur ハンドラ
- * ★ バグ修正: 大文字正規化のみ（カーソル位置をリセットしない）
- */
 function onOcrPartBlur() {
   var inp  = document.getElementById('ocrPartInput');
   var code = inp.value.trim().toUpperCase();
@@ -1351,11 +1310,6 @@ function onOcrPartBlur() {
   }
 }
 
-/**
- * OCRフロー用マスタ検索（ocrPartInputの値を使用）
- * ヒット: 図番・品名ともに readonly で表示
- * 未ヒット: 図番・品名ともに編集可のまま
- */
 function doMasterSearch() {
   var inp  = document.getElementById('ocrPartInput');
   var code = inp.value.trim().toUpperCase();
@@ -1367,35 +1321,31 @@ function doMasterSearch() {
     .catch(function(e){ showLoading(false); showToast('❌ 検索エラー: ' + e.message, 'error'); });
 }
 
-/**
- * マスタ検索結果を画面に反映
- * @param {Object}  result  - GASから返却されたルックアップ結果
- * @param {boolean} fromOcr - true=OCRフロー / false=手入力フロー
- *
- * 【OCRフロー + ヒット】  → 図番・品名ともに readonly（確定表示）
- * 【OCRフロー + 未ヒット】→ 図番・品名ともに編集可（手修正を促す）
- * 【手入力フロー + ヒット】 → 品名を自動入力して編集可、図番は編集可のまま
- * 【手入力フロー + 未ヒット】→ 品名欄に手入力を促すプレースホルダー、両方編集可
- */
+/* ============================================================
+   マスタ検索結果を画面に反映
+   ★ unit を受け取り currentUnit にセット、renderDialTotal() で即時反映
+============================================================ */
 function applyLookupResult(result, fromOcr) {
   var zuno     = (result.zuno   || result.part || '').toUpperCase();
   var hinmei   = result.hinmei || result.name || '';
   var size     = result.size   || '';
+  var unit     = result.unit   || '個';  // ★追加: F列の単位、空なら「個」
   var inMaster = (result.inMaster !== undefined)
     ? result.inMaster
     : (result.success && hinmei && hinmei !== '（マスタ未登録）');
 
-  currentZuno = zuno; currentHinmei = hinmei; currentSize = size;
+  currentZuno   = zuno;
+  currentHinmei = hinmei;
+  currentSize   = size;
+  currentUnit   = unit;  // ★追加: 単位を状態変数に保存
 
   var zi = document.getElementById('zunoDisplay');
   var hi = document.getElementById('hinmeiDisplay');
   var se = document.getElementById('sizeDisplay');
 
-  // 図番を表示（手入力フローの場合、既存の入力値が zuno と同じかチェック不要、上書き）
   zi.value     = zuno;
   zi.className = 'field-value' + (zuno ? ' filled' : '');
 
-  // 品名を表示
   if (inMaster) {
     hi.value       = hinmei;
     hi.className   = 'field-value filled';
@@ -1406,21 +1356,17 @@ function applyLookupResult(result, fromOcr) {
     hi.placeholder = '（マスタ未登録 — 品名を手入力してください）';
   }
 
-  // サイズ
   se.textContent = size || '―';
   se.className   = 'field-value' + (inMaster ? ' filled' : ' warn');
 
-  // ===== フローによる readonly 制御 =====
+  // フローによる readonly 制御
   if (fromOcr && inMaster) {
-    // OCRフロー・ヒット → 両方 readonly（確定）
     setInfoFieldsEditable(false, false);
     isOcrFlow = true;
   } else if (fromOcr && !inMaster) {
-    // OCRフロー・未ヒット → 両方編集可（修正を促す）
     setInfoFieldsEditable(true, true);
     isOcrFlow = true;
   } else {
-    // 手入力フロー → 常に編集可
     setInfoFieldsEditable(true, true);
     isOcrFlow = false;
   }
@@ -1433,10 +1379,10 @@ function applyLookupResult(result, fromOcr) {
     document.getElementById('ocrPartHint').textContent = inMaster
       ? '✅ マスタ確認済 — 数量を入力して登録してください'
       : '⚠️ マスタ未登録 — 図番・品名を修正後、数量を入力してください';
-    // ヒット済みなのでマスタ検索ボタンは非表示に
     if (inMaster) document.getElementById('btnMasterSearch').style.display = 'none';
   }
 
+  renderDialTotal();  // ★追加: 単位を即時反映
   showToast(
     inMaster
       ? '✅ 読取完了！数量ダイヤルを合わせてください'
@@ -1469,7 +1415,6 @@ function startCamera() {
     document.getElementById('scanLabel').textContent  = '🔍 ガイド枠に図番を合わせてください';
     document.getElementById('scanHint').style.display = 'flex';
     document.getElementById('scanHint').textContent   = '🔍 2秒ごとに自動OCR解析中…';
-    // カメラON中は登録情報の手入力を無効化（スキャン優先）
     setInfoFieldsEditable(false, false);
     video.onloadedmetadata = function(){ video.play().then(startOcrLoop); };
   })
@@ -1494,7 +1439,6 @@ function stopCamera() {
   document.getElementById('scanHint').style.display = 'none';
   cameraActive = false; ocrRunning = false;
   document.getElementById('scanLabel').textContent = '🔍 下のボタンでOCR開始';
-  // カメラOFF → 手入力モードに戻す（フィールド編集可）
   setInfoFieldsEditable(true, true);
 }
 
@@ -1515,14 +1459,11 @@ function doOcrTick() {
     .then(function(data){
       guide.classList.remove('scanning');
       if (data.part) {
-        // OCR成功: カメラ停止 → OCR結果を表示 → ユーザーに確認を促す
         stopCamera();
         setOcrResult(data.part);
         showToast('✅ 図番を読み取りました。確認後にマスタ検索してください', 'success');
       } else if (data.rawText && data.rawText.trim()) {
-        // 図番候補が見つからず生テキストのみ: ユーザーに手修正を促す
         stopCamera();
-        // 生テキストから余分な改行・空白を除去して表示（文字制限はしない→BSキー問題を回避）
         var rv = data.rawText.replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').trim();
         setOcrResult(rv.substring(0, 40));
         document.getElementById('ocrPartInput').className = 'editing';
@@ -1581,11 +1522,6 @@ function captureOcr() {
   return out.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
 }
 
-/**
- * OCR結果をocrPartInputに表示し、マスタ検索ボタンを有効化する
- * ★ バグ修正: code に対して replace で文字フィルタリングしない
- *             → BSキー正常動作・余分入力防止
- */
 function setOcrResult(code) {
   code = code.trim().toUpperCase();
   var inp  = document.getElementById('ocrPartInput');
@@ -1595,7 +1531,6 @@ function setOcrResult(code) {
   document.getElementById('ocrPartHint').textContent    = '修正が必要な場合は直接編集し、マスタ検索してください';
   document.getElementById('ocrResultWrap').style.display = 'block';
   document.getElementById('btnMasterSearch').style.display = 'flex';
-  // zunoDisplay にも仮セット（マスタ検索前の参照用）
   var zi = document.getElementById('zunoDisplay');
   zi.value     = code;
   zi.className = 'field-value';
@@ -1605,8 +1540,7 @@ function setOcrResult(code) {
    登録情報カード クリア
 ============================================================ */
 function clearInfoCard() {
-  currentZuno = null; currentHinmei = ''; currentSize = '';
-  isOcrFlow = false;
+  currentZuno = null; currentHinmei = ''; currentSize = ''; currentUnit = '個';  // ★unit追加
 
   var ocrInp = document.getElementById('ocrPartInput');
   ocrInp.value     = '----';
@@ -1626,7 +1560,8 @@ function clearInfoCard() {
   var se = document.getElementById('sizeDisplay');
   se.textContent = '―'; se.className = 'field-value';
 
-  resetDials();
+  isOcrFlow = false;
+  resetDials();  // renderDialTotal() が呼ばれ「個」で即時反映
   document.getElementById('inventoryTypeSelect').value = '';
   document.getElementById('registerBtn').disabled = true;
 
@@ -1688,24 +1623,15 @@ function openModal(msg, sub) {
 
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('show');
-  // 登録完了後: 場所・担当者は保持、登録情報のみクリア
   resetInfoOnly();
 }
 
 /* ============================================================
    リセット系
-   - resetInfoOnly: 登録情報のみクリア（場所・担当者は保持）
-   - resetAll:      再スキャン用（登録情報クリア、場所・担当者は保持）
 ============================================================ */
-
-/**
- * 登録情報のみクリア（場所・担当者は保持）
- * 登録完了後・再スキャン時に使用
- */
 function resetInfoOnly() {
   if (cameraActive) stopCamera();
-  currentZuno = null; currentHinmei = ''; currentSize = '';
-  isOcrFlow = false;
+  currentZuno = null; currentHinmei = ''; currentSize = ''; currentUnit = '個';  // ★unit追加
 
   var ocrInp = document.getElementById('ocrPartInput');
   ocrInp.value     = '----';
@@ -1725,7 +1651,8 @@ function resetInfoOnly() {
   var se = document.getElementById('sizeDisplay');
   se.textContent = '―'; se.className = 'field-value';
 
-  resetDials();
+  isOcrFlow = false;
+  resetDials();  // renderDialTotal() が呼ばれ「個」で即時反映
   document.getElementById('inventoryTypeSelect').value = '';
   document.getElementById('registerBtn').disabled = true;
   document.getElementById('scanLabel').textContent = '🔍 下のボタンでOCR開始';
@@ -1734,9 +1661,6 @@ function resetInfoOnly() {
   setInfoFieldsEditable(true, true);
 }
 
-/**
- * 再スキャンボタン用（登録情報のみクリア、場所・担当者は保持）
- */
 function resetAll() {
   resetInfoOnly();
 }
