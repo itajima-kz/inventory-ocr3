@@ -64,7 +64,7 @@
       padding: 0 0 56px;
     }
 
-    /* ===== ヘッダー: 横並びレイアウトに変更 ===== */
+    /* ===== ヘッダー ===== */
     .app-header {
       background: linear-gradient(135deg, var(--header-from) 0%, var(--header-to) 100%);
       color: #fff;
@@ -489,7 +489,7 @@
       font-weight: 700;
     }
 
-    /* ===== ダイヤルシステム: 高さを約14%縮小 ===== */
+    /* ===== ダイヤルシステム ===== */
     .dial-section-label {
       font-size: 12px;
       color: var(--blue-dk);
@@ -522,7 +522,6 @@
       letter-spacing: 0.04em;
     }
 
-    /* 高さ 160px → 138px（約14%縮小） */
     .dial-wheel {
       position: relative;
       width: 100%;
@@ -949,7 +948,7 @@
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbyGFG6DnMxgM_9tksHnpSg9HnbpX-9uSwSwJ2gUKufmOt3244a2ZtfmUKgy3_SAqyg/exec';
 
 /* ============================================================
-   ダイヤルシステム: ITEM_H=40, WHEEL_H=138
+   ダイヤルシステム
 ============================================================ */
 var ITEM_H  = 40;
 var WHEEL_H = 138;
@@ -1502,48 +1501,102 @@ function doOcrTick() {
     .finally(function(){ ocrRunning = false; });
 }
 
+/* ============================================================
+   captureOcr() — ★ 修正箇所
+   -------------------------------------------------------
+   【変更前の問題】
+     ・#cameraVideo の getBoundingClientRect() を基準にしていた
+     ・#ocrGuide の getBoundingClientRect() でガイド位置を測定していた
+     → iOS Safari では video 要素の内部レンダリングと DOM 座標に
+       微妙なズレが生じ、上下方向のズレとなっていた
+
+   【修正方針】
+     ・基準を #scanSquare（コンテナ）の getBoundingClientRect() に統一
+     ・ガイド位置は CSS 定義値（%）を直接定数として使用
+       （#ocrGuide: left 8%, top 12%, width 84%, height 76%）
+     ・object-fit: cover の数学的変換はそのまま維持
+   -------------------------------------------------------
+============================================================ */
 function captureOcr() {
   var video = document.getElementById('cameraVideo');
   var vw = video.videoWidth, vh = video.videoHeight;
   if (!vw || !vh) return null;
+
+  // ── ① 基準: scanSquare コンテナの表示サイズ ──
+  var sq     = document.getElementById('scanSquare');
+  var sqRect = sq.getBoundingClientRect();
+  var dispW  = sqRect.width;
+  var dispH  = sqRect.height;
+
+  // ── ② ocrGuide の CSS 定義値をそのまま使用（DOM計測を廃止） ──
+  //   #ocrGuide { left: 8%; top: 12%; width: 84%; height: 76%; }
+  var GUIDE_L = 0.08;
+  var GUIDE_T = 0.12;
+  var GUIDE_W = 0.84;
+  var GUIDE_H = 0.76;
+
+  var guideLeft   = GUIDE_L * dispW;
+  var guideTop    = GUIDE_T * dispH;
+  var guideWidth  = GUIDE_W * dispW;
+  var guideHeight = GUIDE_H * dispH;
+
+  // ── ③ object-fit: cover のスケール・オフセット計算 ──
+  //   videoAspect > dispAspect → 高さ基準でスケール（左右クリップ）
+  //   videoAspect ≤ dispAspect → 幅基準でスケール（上下クリップ）
+  var dispAspect  = dispW / dispH;
+  var videoAspect = vw / vh;
+  var scale, offX, offY;
+
+  if (videoAspect > dispAspect) {
+    scale = dispH / vh;
+    offX  = (vw * scale - dispW) / 2;  // 左右のはみ出し量（表示px）
+    offY  = 0;
+  } else {
+    scale = dispW / vw;
+    offX  = 0;
+    offY  = (vh * scale - dispH) / 2;  // 上下のはみ出し量（表示px）
+  }
+
+  // ── ④ ガイド枠（表示座標）→ 映像フレーム座標 に変換 ──
+  //   表示px = (映像px × scale) - offset
+  //   → 映像px = (表示px + offset) / scale
+  var sx = Math.round((guideLeft   + offX) / scale);
+  var sy = Math.round((guideTop    + offY) / scale);
+  var sw = Math.round(guideWidth   / scale);
+  var sh = Math.round(guideHeight  / scale);
+
+  // 映像フレーム範囲内にクランプ
+  sx = Math.max(0, Math.min(vw - 1, sx));
+  sy = Math.max(0, Math.min(vh - 1, sy));
+  sw = Math.max(1, Math.min(vw - sx, sw));
+  sh = Math.max(1, Math.min(vh - sy, sh));
+
+  // ── ⑤ 映像全体→クロップ→リサイズ ──
   var full = document.createElement('canvas');
   full.width = vw; full.height = vh;
   full.getContext('2d').drawImage(video, 0, 0, vw, vh);
-  var vrect = document.getElementById('cameraVideo').getBoundingClientRect();
-  var gr    = document.getElementById('ocrGuide').getBoundingClientRect();
-  var ratioX = (gr.left - vrect.left) / vrect.width;
-  var ratioY = (gr.top  - vrect.top)  / vrect.height;
-  var ratioW = gr.width  / vrect.width;
-  var ratioH = gr.height / vrect.height;
-  var dispAspect  = vrect.width / vrect.height;
-  var videoAspect = vw / vh;
-  var coverScale, coverOffX, coverOffY;
-  if (videoAspect > dispAspect) {
-    coverScale = vrect.height / vh; coverOffX = (vw * coverScale - vrect.width) / 2; coverOffY = 0;
-  } else {
-    coverScale = vrect.width / vw; coverOffX = 0; coverOffY = (vh * coverScale - vrect.height) / 2;
-  }
-  var sx = Math.round((ratioX * vrect.width  + coverOffX) / coverScale);
-  var sy = Math.round((ratioY * vrect.height + coverOffY) / coverScale);
-  var sw = Math.round(ratioW * vrect.width  / coverScale);
-  var sh = Math.round(ratioH * vrect.height / coverScale);
-  sx = Math.max(0, Math.min(vw-1, sx)); sy = Math.max(0, Math.min(vh-1, sy));
-  sw = Math.max(1, Math.min(vw-sx, sw)); sh = Math.max(1, Math.min(vh-sy, sh));
+
   var crop = document.createElement('canvas');
   crop.width = sw; crop.height = sh;
   crop.getContext('2d').drawImage(full, sx, sy, sw, sh, 0, 0, sw, sh);
+
   var MAX = 1000, out = crop;
   if (crop.width > MAX || crop.height > MAX) {
     var r = Math.min(MAX / crop.width, MAX / crop.height);
     out = document.createElement('canvas');
-    out.width = Math.round(crop.width * r); out.height = Math.round(crop.height * r);
+    out.width  = Math.round(crop.width  * r);
+    out.height = Math.round(crop.height * r);
     out.getContext('2d').drawImage(crop, 0, 0, out.width, out.height);
   }
+
+  // ── ⑥ デバッグ用キャンバス更新 ──
   var dbgWrap = document.getElementById('ocrDebugWrap');
   var dbgCvs  = document.getElementById('ocrDebugCanvas');
   dbgWrap.style.display = 'block';
-  dbgCvs.width = out.width; dbgCvs.height = out.height;
+  dbgCvs.width  = out.width;
+  dbgCvs.height = out.height;
   dbgCvs.getContext('2d').drawImage(out, 0, 0);
+
   return out.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
 }
 
