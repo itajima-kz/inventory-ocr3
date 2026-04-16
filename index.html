@@ -218,8 +218,6 @@
       display: none;
       transform: translateZ(0);
       backface-visibility: hidden;
-      opacity: 0;
-      pointer-events: none;
     }
 
     #scanFlash {
@@ -234,7 +232,6 @@
     }
 
     #ocrGuide {
-      display: none !important;
       display: none;
       position: absolute;
       left: 8%; width: 84%;
@@ -262,7 +259,6 @@
     }
 
     .qr-corner {
-      display: none;
       position: absolute;
       width: 22px;
       height: 22px;
@@ -278,8 +274,7 @@
     .qr-corner.br { bottom:7px; right:7px;  border-bottom-width:3px; border-right-width:3px;  border-radius:0 0 5px 0; }
 
     .scan-square.camera-on.mode-ocr .qr-corner { border-color: #a855f7; }
-    .scan-square.camera-on .scan-icon {
-      display: none; display: block; opacity: 0.12; }
+    .scan-square.camera-on .scan-icon { display: none; }
 
     .scan-icon {
       font-size: 36px;
@@ -826,7 +821,7 @@
     </button>
     <button id="btnCameraStop" onclick="stopCamera()">⏹ カメラを停止</button>
 
-    <div class="scan-hint" id="scanHint" style="display:none;">🔍 OCR読み取り中…</div>
+    <div class="scan-hint" id="scanHint" style="display:none;">🔍 ガイド枠に図番を合わせてください</div>
 
     <div id="ocrDebugWrap" style="display:none;">
       <p>▼ OCRに送っている画像</p>
@@ -1365,7 +1360,7 @@ function startCamera() {
     document.getElementById('btnMasterSearch').style.display = 'none';
     document.getElementById('scanSquare').className = 'scan-square camera-on mode-ocr';
     document.getElementById('ocrGuide').style.display = 'block';
-    document.getElementById('scanLabel').textContent  = '🔍 OCR読み取り中…';
+    document.getElementById('scanLabel').textContent  = '🔍 ガイド枠に図番を合わせてください';
     document.getElementById('scanHint').style.display = 'flex';
     document.getElementById('scanHint').textContent   = '🔍 2秒ごとに自動OCR解析中…';
     setInfoFieldsEditable(false, false);
