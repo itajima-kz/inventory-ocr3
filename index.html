@@ -213,8 +213,11 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: center center;
       border-radius: calc(var(--radius-sm) - 2px);
       display: none;
+      transform: translateZ(0);
+      backface-visibility: hidden;
     }
 
     #scanFlash {
@@ -1339,12 +1342,19 @@ function startCamera() {
     showToast('❌ このブラウザはカメラに対応していません', 'error'); return;
   }
   navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+    video: {
+      facingMode: { ideal: 'environment' },
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+      aspectRatio: { ideal: 16 / 9 },
+      resizeMode: 'crop-and-scale'
+    }
   })
   .then(function(stream){
     cameraStream = stream; cameraActive = true; updateManualSearchBtn();
     var video = document.getElementById('cameraVideo');
     video.srcObject = stream; video.style.display = 'block';
+    video.style.objectPosition = 'center center';
     document.getElementById('btnCameraStart').style.display = 'none';
     document.getElementById('btnCameraStop').style.display  = 'flex';
     document.getElementById('btnMasterSearch').style.display = 'none';
@@ -1354,7 +1364,13 @@ function startCamera() {
     document.getElementById('scanHint').style.display = 'flex';
     document.getElementById('scanHint').textContent   = '🔍 2秒ごとに自動OCR解析中…';
     setInfoFieldsEditable(false, false);
-    video.onloadedmetadata = function(){ video.play().then(startOcrLoop); };
+    video.onloadedmetadata = function(){
+      video.play().then(function(){
+        requestAnimationFrame(function(){
+          requestAnimationFrame(startOcrLoop);
+        });
+      });
+    };
   })
   .catch(function(err){
     var msg = 'カメラを起動できませんでした';
@@ -1434,61 +1450,62 @@ function doOcrTick() {
      → 物理的な高さを保証してビジュアルのズレも防ぐ
    -------------------------------------------------------
 ============================================================ */
+function getVideoCoverMetrics() {
+  var video = document.getElementById('cameraVideo');
+  var vw = video.videoWidth;
+  var vh = video.videoHeight;
+  var rw = video.clientWidth;
+  var rh = video.clientHeight;
+
+  if (!vw || !vh || !rw || !rh) return null;
+
+  var scale = Math.max(rw / vw, rh / vh);
+  var renderedW = vw * scale;
+  var renderedH = vh * scale;
+
+  return {
+    vw: vw,
+    vh: vh,
+    rw: rw,
+    rh: rh,
+    scale: scale,
+    cropLeft: (renderedW - rw) / 2,
+    cropTop:  (renderedH - rh) / 2
+  };
+}
+
 function captureOcr() {
   var video = document.getElementById('cameraVideo');
-  var vw = video.videoWidth, vh = video.videoHeight;
-  if (!vw || !vh) return null;
+  var guide = document.getElementById('ocrGuide');
+  var metrics = getVideoCoverMetrics();
+  if (!metrics) return null;
 
-  // ── ① 表示サイズ取得 ──────────────────────────────────
-  //   dispW: getBoundingClientRect（width:100% → 常に正確）
-  //   dispH: CSS定義の SCAN_ASPECT から逆算 ★修正の核心
-  //          → aspect-ratio の遅延評価・未対応を完全回避
-  var sq    = document.getElementById('scanSquare');
-  var dispW = sq.getBoundingClientRect().width;
-  var dispH = dispW / SCAN_ASPECT;   // ★ sqRect.height は使わない
+  var videoRect = video.getBoundingClientRect();
+  var guideRect = guide.getBoundingClientRect();
 
-  // ── ② ocrGuide の CSS 定義値（% 定数）を直接使用 ──────
-  //   #ocrGuide { left:8%; top:12%; width:84%; height:76%; }
-  var guideLeft   = 0.08 * dispW;
-  var guideTop    = 0.12 * dispH;
-  var guideWidth  = 0.84 * dispW;
-  var guideHeight = 0.76 * dispH;
+  var relLeft   = guideRect.left - videoRect.left;
+  var relTop    = guideRect.top  - videoRect.top;
+  var relWidth  = guideRect.width;
+  var relHeight = guideRect.height;
 
-  // ── ③ object-fit: cover のスケール・オフセット計算 ────
-  var dispAspect  = SCAN_ASPECT;        // = dispW / dispH（定数化）
-  var videoAspect = vw / vh;
-  var scale, offX, offY;
+  var sx = Math.round((relLeft   + metrics.cropLeft) / metrics.scale);
+  var sy = Math.round((relTop    + metrics.cropTop)  / metrics.scale);
+  var sw = Math.round(relWidth   / metrics.scale);
+  var sh = Math.round(relHeight  / metrics.scale);
 
-  if (videoAspect > dispAspect) {
-    // 映像が表示枠より横長 → 高さ基準スケール、左右クリップ
-    scale = dispH / vh;
-    offX  = (vw * scale - dispW) / 2;
-    offY  = 0;
-  } else {
-    // 映像が表示枠より縦長 → 幅基準スケール、上下クリップ
-    scale = dispW / vw;
-    offX  = 0;
-    offY  = (vh * scale - dispH) / 2;
-  }
+  sx = Math.max(0, Math.min(metrics.vw - 1, sx));
+  sy = Math.max(0, Math.min(metrics.vh - 1, sy));
+  sw = Math.max(1, Math.min(metrics.vw - sx, sw));
+  sh = Math.max(1, Math.min(metrics.vh - sy, sh));
 
-  // ── ④ 表示座標 → 映像フレーム座標 変換 ───────────────
-  var sx = Math.round((guideLeft   + offX) / scale);
-  var sy = Math.round((guideTop    + offY) / scale);
-  var sw = Math.round(guideWidth   / scale);
-  var sh = Math.round(guideHeight  / scale);
-
-  sx = Math.max(0, Math.min(vw - 1, sx));
-  sy = Math.max(0, Math.min(vh - 1, sy));
-  sw = Math.max(1, Math.min(vw - sx, sw));
-  sh = Math.max(1, Math.min(vh - sy, sh));
-
-  // ── ⑤ キャプチャ → クロップ → リサイズ ──────────────
   var full = document.createElement('canvas');
-  full.width = vw; full.height = vh;
-  full.getContext('2d').drawImage(video, 0, 0, vw, vh);
+  full.width = metrics.vw;
+  full.height = metrics.vh;
+  full.getContext('2d').drawImage(video, 0, 0, metrics.vw, metrics.vh);
 
   var crop = document.createElement('canvas');
-  crop.width = sw; crop.height = sh;
+  crop.width = sw;
+  crop.height = sh;
   crop.getContext('2d').drawImage(full, sx, sy, sw, sh, 0, 0, sw, sh);
 
   var MAX = 1000, out = crop;
@@ -1500,11 +1517,11 @@ function captureOcr() {
     out.getContext('2d').drawImage(crop, 0, 0, out.width, out.height);
   }
 
-  // ── ⑥ デバッグ表示 ───────────────────────────────────
   var dbgWrap = document.getElementById('ocrDebugWrap');
   var dbgCvs  = document.getElementById('ocrDebugCanvas');
   dbgWrap.style.display = 'block';
-  dbgCvs.width = out.width; dbgCvs.height = out.height;
+  dbgCvs.width = out.width;
+  dbgCvs.height = out.height;
   dbgCvs.getContext('2d').drawImage(out, 0, 0);
 
   return out.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
