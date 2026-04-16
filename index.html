@@ -64,7 +64,6 @@
       padding: 0 0 56px;
     }
 
-    /* ===== ヘッダー ===== */
     .app-header {
       background: linear-gradient(135deg, var(--header-from) 0%, var(--header-to) 100%);
       color: #fff;
@@ -100,7 +99,6 @@
       white-space: nowrap;
     }
 
-    /* ===== カード共通 ===== */
     .card {
       background: var(--surface);
       border-radius: var(--radius);
@@ -131,7 +129,6 @@
       border-radius: 3px;
     }
 
-    /* ===== 場所・担当者カード ===== */
     .operator-card {
       background: linear-gradient(145deg, #eef3fc, #dde8fa);
       border: 2px solid var(--blue-mid);
@@ -174,17 +171,23 @@
       margin-left: 6px;
     }
 
-    /* ===== スキャンカード ===== */
     .scan-card {
       background: linear-gradient(145deg, #f4f7fd, #e4ecfc);
       border: 2px solid var(--blue-mid);
       padding: 11px 12px 10px;
     }
 
+    /*
+     * ★ iOS aspect-ratio 遅延評価の対策（CSS側）
+     *   aspect-ratio だけだと初回レンダリング時に height=0 になるケースがある。
+     *   padding-bottom ハックで物理的な高さを保証する。
+     *   @supports で aspect-ratio が有効なブラウザでは padding-bottom を無効化。
+     */
     .scan-square {
       position: relative;
       width: 100%;
       aspect-ratio: 2.8 / 1;
+      padding-bottom: calc(100% / 2.8);
       background: rgba(255,255,255,0.92);
       border: 2px solid var(--blue-lt);
       border-radius: var(--radius-sm);
@@ -194,6 +197,9 @@
       justify-content: center;
       overflow: hidden;
       transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    @supports (aspect-ratio: 1) {
+      .scan-square { padding-bottom: 0; }
     }
 
     .scan-square.camera-on.mode-ocr {
@@ -358,7 +364,6 @@
       font-weight: 500;
     }
 
-    /* ===== OCR読み取り結果エリア ===== */
     .ocr-result-wrap {
       display: none;
       margin-top: 7px;
@@ -388,7 +393,6 @@
     #ocrPartInput.editing  { border-color: #ffaa00; color: #ffaa00; }
     .ocr-part-hint { font-size: 10px; color: #888; text-align: center; margin-top: 3px; }
 
-    /* ===== 登録情報エリア ===== */
     .field-label {
       font-size: 12px;
       color: var(--blue-dk);
@@ -489,7 +493,6 @@
       font-weight: 700;
     }
 
-    /* ===== ダイヤルシステム ===== */
     .dial-section-label {
       font-size: 12px;
       color: var(--blue-dk);
@@ -598,7 +601,6 @@
       align-self: flex-start;
     }
 
-    /* ===== セレクト ===== */
     select {
       width: 100%;
       font-family: var(--font);
@@ -622,7 +624,6 @@
       box-shadow: 0 0 0 3px rgba(46,107,224,0.14);
     }
 
-    /* ===== ボタン行 ===== */
     .btn-row {
       display: flex;
       gap: 8px;
@@ -666,7 +667,6 @@
       box-shadow: 0 4px 14px rgba(20,120,160,0.38);
     }
 
-    /* ===== モーダル ===== */
     #modalOverlay {
       display: none;
       position: fixed;
@@ -702,7 +702,6 @@
       font-family: var(--font);
     }
 
-    /* ===== トースト ===== */
     #toast {
       position: fixed;
       bottom: 16px;
@@ -728,7 +727,6 @@
     #toast.error   { background: linear-gradient(135deg, var(--error), #a01010); }
     #toast.info    { background: linear-gradient(135deg, var(--btn-ocr-from), var(--btn-ocr-to)); }
 
-    /* ===== ローディング ===== */
     #loading {
       display: none;
       position: fixed;
@@ -778,7 +776,6 @@
     <div class="subtitle" id="currentDate">読込中...</div>
   </header>
 
-  <!-- ===== 場所・担当者カード ===== -->
   <div class="card operator-card" id="operatorCard">
     <div class="card-label">
       場所 ／ 担当者
@@ -801,7 +798,6 @@
     </div>
   </div>
 
-  <!-- ===== スキャンカード ===== -->
   <div class="card scan-card" id="scanCard">
     <div class="card-label">OCR 図番読取</div>
     <div class="scan-square" id="scanSquare">
@@ -844,7 +840,6 @@
     </button>
   </div>
 
-  <!-- ===== 登録情報カード ===== -->
   <div class="card" id="infoCard" style="position:relative;">
     <div class="card-label">登録情報</div>
     <button class="operator-clear-btn" onclick="clearInfoCard()">クリア</button>
@@ -883,7 +878,6 @@
       <div class="field-value" id="sizeDisplay">―</div>
     </div>
 
-    <!-- 数量ダイヤル -->
     <div>
       <div class="dial-section-label">数量（ダイヤルで入力）</div>
       <div class="dial-container">
@@ -930,7 +924,6 @@
     </div>
   </div>
 
-  <!-- ===== ボタン行 ===== -->
   <div class="btn-row">
     <button class="btn btn-rescan" onclick="resetAll()">🔄 再スキャン</button>
     <button class="btn btn-register" id="registerBtn" onclick="registerData()" disabled>✅ 登録</button>
@@ -947,6 +940,13 @@
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbyGFG6DnMxgM_9tksHnpSg9HnbpX-9uSwSwJ2gUKufmOt3244a2ZtfmUKgy3_SAqyg/exec';
 
+/*
+ * ★ scan-square の CSS 定義アスペクト比（JS / CSS 共通定数）
+ *   CSS: aspect-ratio: 2.8 / 1  と必ず一致させること。
+ *   captureOcr() で dispH を width から逆算するために使用する。
+ */
+var SCAN_ASPECT = 2.8;
+
 /* ============================================================
    ダイヤルシステム
 ============================================================ */
@@ -954,11 +954,7 @@ var ITEM_H  = 40;
 var WHEEL_H = 138;
 var DCENTER = WHEEL_H / 2 - ITEM_H / 2;
 var PLACES  = [1000, 100, 10, 1];
-
-var _dPos     = {};
-var _dVel     = {};
-var _dRaf     = {};
-var _dLastInt = {};
+var _dPos = {}, _dVel = {}, _dRaf = {}, _dLastInt = {};
 var dialValues = { 1000: 0, 100: 0, 10: 0, 1: 0 };
 
 PLACES.forEach(function(p) {
@@ -979,13 +975,10 @@ function _dRender(place) {
     var scale   = Math.max(0.60, 1 - absD * 0.175);
     var opacity = Math.max(0.18, 1 - absD * 0.48);
     var fsize   = absD < 0.5 ? 30 : (absD < 1.5 ? 20 : 14);
-    var color   = absD < 0.5
-      ? '#00ff88'
-      : 'rgba(64,168,200,' + opacity.toFixed(2) + ')';
+    var color   = absD < 0.5 ? '#00ff88' : 'rgba(64,168,200,' + opacity.toFixed(2) + ')';
     var el = document.createElement('div');
     el.style.cssText =
-      'position:absolute;left:0;right:0;height:' + ITEM_H + 'px;' +
-      'top:' + y.toFixed(1) + 'px;' +
+      'position:absolute;left:0;right:0;height:' + ITEM_H + 'px;top:' + y.toFixed(1) + 'px;' +
       'display:flex;align-items:center;justify-content:center;' +
       'font-family:monospace;font-weight:900;font-size:' + fsize + 'px;' +
       'color:' + color + ';transform:scale(' + scale.toFixed(3) + ');pointer-events:none;';
@@ -996,8 +989,7 @@ function _dRender(place) {
   if (intPos !== _dLastInt[place]) {
     _dLastInt[place] = intPos;
     dialValues[place] = ((intPos % 10) + 10) % 10;
-    renderDialTotal();
-    updateRegisterBtn();
+    renderDialTotal(); updateRegisterBtn();
   }
 }
 
@@ -1010,16 +1002,15 @@ function _dSetVal(place, val) {
 
 function _dSnap(place) {
   if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
-  var target = Math.round(_dPos[place]);
-  var start  = _dPos[place];
-  var t0     = performance.now(), dur = 130;
+  var target = Math.round(_dPos[place]), start = _dPos[place];
+  var t0 = performance.now(), dur = 130;
   function step(now) {
     var t = Math.min(1, (now - t0) / dur);
-    var e = 1 - (1 - t) * (1 - t) * (1 - t);
+    var e = 1 - (1-t)*(1-t)*(1-t);
     _dPos[place] = start + (target - start) * e;
     _dRender(place);
     if (t < 1) { _dRaf[place] = requestAnimationFrame(step); }
-    else { _dPos[place] = target; dialValues[place] = ((target % 10) + 10) % 10; renderDialTotal(); updateRegisterBtn(); }
+    else { _dPos[place] = target; dialValues[place] = ((target%10)+10)%10; renderDialTotal(); updateRegisterBtn(); }
   }
   _dRaf[place] = requestAnimationFrame(step);
 }
@@ -1028,9 +1019,7 @@ function _dMomentum(place, vel) {
   if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
   var FRICTION = 0.89, MIN_VEL = 0.0015;
   function step() {
-    vel *= FRICTION;
-    _dPos[place] += vel * 16.67;
-    _dRender(place);
+    vel *= FRICTION; _dPos[place] += vel * 16.67; _dRender(place);
     if (Math.abs(vel) > MIN_VEL) { _dRaf[place] = requestAnimationFrame(step); }
     else { _dSnap(place); }
   }
@@ -1041,7 +1030,6 @@ function _bindDial(place) {
   var wheel = document.getElementById('dial-' + place);
   var startY = 0, startPos = 0, lastY = 0, lastTime = 0, vel = 0;
   var isDrag = false, tapThreshold = 6, moved = 0;
-
   function onStart(cy) {
     if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
     isDrag = true; startY = cy; startPos = _dPos[place];
@@ -1050,62 +1038,40 @@ function _bindDial(place) {
   function onMove(cy) {
     if (!isDrag) return;
     var now = Date.now(), dt = Math.max(1, now - lastTime);
-    vel = -(cy - lastY) / dt / ITEM_H;
-    lastY = cy; lastTime = now;
+    vel = -(cy - lastY) / dt / ITEM_H; lastY = cy; lastTime = now;
     moved = Math.abs(cy - startY);
-    _dPos[place] = startPos - (cy - startY) / ITEM_H;
-    _dRender(place);
+    _dPos[place] = startPos - (cy - startY) / ITEM_H; _dRender(place);
   }
   function onEnd(cy, wheelEl) {
-    if (!isDrag) return;
-    isDrag = false;
+    if (!isDrag) return; isDrag = false;
     if (moved < tapThreshold) {
-      var rect  = wheelEl.getBoundingClientRect();
-      var relY  = cy - rect.top;
-      var delta = relY < WHEEL_H / 2 ? -1 : 1;
+      var rect = wheelEl.getBoundingClientRect();
+      var delta = (cy - rect.top) < WHEEL_H / 2 ? -1 : 1;
       _dPos[place] = Math.round(_dPos[place]) + delta;
       _dRender(place); _dSnap(place);
-    } else if (Math.abs(vel) > 0.005) {
-      _dMomentum(place, vel);
-    } else {
-      _dSnap(place);
-    }
+    } else if (Math.abs(vel) > 0.005) { _dMomentum(place, vel); }
+    else { _dSnap(place); }
   }
-
-  wheel.addEventListener('touchstart', function(e) { e.preventDefault(); onStart(e.touches[0].clientY); }, { passive: false });
-  wheel.addEventListener('touchmove',  function(e) { e.preventDefault(); onMove(e.touches[0].clientY); },  { passive: false });
-  wheel.addEventListener('touchend',   function(e) { onEnd(e.changedTouches[0].clientY, wheel); });
-
+  wheel.addEventListener('touchstart', function(e){ e.preventDefault(); onStart(e.touches[0].clientY); }, { passive: false });
+  wheel.addEventListener('touchmove',  function(e){ e.preventDefault(); onMove(e.touches[0].clientY); },  { passive: false });
+  wheel.addEventListener('touchend',   function(e){ onEnd(e.changedTouches[0].clientY, wheel); });
   var mdrag = false;
-  wheel.addEventListener('mousedown', function(e) { e.preventDefault(); mdrag = true; onStart(e.clientY); });
-  document.addEventListener('mousemove', function(e) { if (mdrag) onMove(e.clientY); });
-  document.addEventListener('mouseup',   function(e) { if (mdrag) { mdrag = false; onEnd(e.clientY, wheel); } });
-  wheel.addEventListener('wheel', function(e) {
+  wheel.addEventListener('mousedown', function(e){ e.preventDefault(); mdrag = true; onStart(e.clientY); });
+  document.addEventListener('mousemove', function(e){ if (mdrag) onMove(e.clientY); });
+  document.addEventListener('mouseup',   function(e){ if (mdrag){ mdrag = false; onEnd(e.clientY, wheel); } });
+  wheel.addEventListener('wheel', function(e){
     e.preventDefault();
-    if (_dRaf[place]) { cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
-    _dPos[place] += e.deltaY > 0 ? 1 : -1;
-    _dRender(place); _dSnap(place);
+    if (_dRaf[place]){ cancelAnimationFrame(_dRaf[place]); _dRaf[place] = null; }
+    _dPos[place] += e.deltaY > 0 ? 1 : -1; _dRender(place); _dSnap(place);
   }, { passive: false });
 }
 
-function initDials() {
-  PLACES.forEach(function(p) { _dSetVal(p, 0); _bindDial(p); });
-  renderDialTotal();
-}
-
-function resetDials() {
-  PLACES.forEach(function(p) { _dSetVal(p, 0); });
-  renderDialTotal();
-}
-
-function getDialTotal() {
-  return dialValues[1000] * 1000 + dialValues[100] * 100 + dialValues[10] * 10 + dialValues[1];
-}
-
+function initDials() { PLACES.forEach(function(p){ _dSetVal(p,0); _bindDial(p); }); renderDialTotal(); }
+function resetDials() { PLACES.forEach(function(p){ _dSetVal(p,0); }); renderDialTotal(); }
+function getDialTotal() { return dialValues[1000]*1000 + dialValues[100]*100 + dialValues[10]*10 + dialValues[1]; }
 function renderDialTotal() {
   var total = getDialTotal();
-  document.getElementById('dialTotal').innerHTML =
-    '<strong>' + total.toLocaleString() + '</strong> <span>' + currentUnit + '</span>';
+  document.getElementById('dialTotal').innerHTML = '<strong>' + total.toLocaleString() + '</strong> <span>' + currentUnit + '</span>';
 }
 
 /* ============================================================
@@ -1124,7 +1090,7 @@ var isOcrFlow     = false;
 /* ============================================================
    初期化
 ============================================================ */
-window.addEventListener('load', function () {
+window.addEventListener('load', function() {
   updateDateTime();
   setInterval(updateDateTime, 1000);
   loadMasterData();
@@ -1135,8 +1101,7 @@ window.addEventListener('load', function () {
 });
 
 function updateDateTime() {
-  var now = new Date();
-  var pad = function(n){ return String(n).padStart(2,'0'); };
+  var now = new Date(), pad = function(n){ return String(n).padStart(2,'0'); };
   document.getElementById('currentDate').textContent =
     now.getFullYear() + '/' + pad(now.getMonth()+1) + '/' + pad(now.getDate()) +
     '  ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
@@ -1156,11 +1121,10 @@ function callGAS(action, params) {
       fetch(GAS_URL + '?' + qs, { method: 'GET' })
         .then(function(r){ return r.json(); }).then(resolve).catch(reject);
     } else {
-      var body = Object.assign({ action: action }, params || {});
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(body)
+        body: JSON.stringify(Object.assign({ action: action }, params || {}))
       }).then(function(r){ return r.json(); }).then(resolve).catch(reject);
     }
   });
@@ -1184,8 +1148,7 @@ function fillSelect(id, items) {
   while (sel.options.length > 1) sel.remove(1);
   items.forEach(function(d){
     var opt = document.createElement('option');
-    opt.value = d; opt.textContent = d;
-    sel.appendChild(opt);
+    opt.value = d; opt.textContent = d; sel.appendChild(opt);
   });
 }
 
@@ -1195,20 +1158,17 @@ function fillSelect(id, items) {
 var savedDept = '', savedPerson = '';
 
 function onDepartmentChange() {
-  savedDept = document.getElementById('departmentSelect').value;
-  savedPerson = '';
+  savedDept = document.getElementById('departmentSelect').value; savedPerson = '';
   try { sessionStorage.setItem('inv_dept', savedDept); sessionStorage.removeItem('inv_person'); } catch(e){}
-  var sel = document.getElementById('personnelSelect');
-  sel.innerHTML = '<option value="">― 選択 ―</option>';
+  document.getElementById('personnelSelect').innerHTML = '<option value="">― 選択 ―</option>';
   updateLockBadge(); updateRegisterBtn();
-  if (!savedDept) return;
-  loadPersonnelForDept(savedDept, '');
+  if (savedDept) loadPersonnelForDept(savedDept, '');
 }
 
 function loadPersonnelForDept(dept, restoreValue) {
   if (!dept) return;
   callGAS('getPersonnel', { department: dept })
-    .then(function(data) {
+    .then(function(data){
       fillSelect('personnelSelect', data.personnel || []);
       if (restoreValue) {
         var sel = document.getElementById('personnelSelect');
@@ -1228,15 +1188,12 @@ function onPersonnelChange() {
 
 function restoreOperator() {
   try {
-    var dept   = sessionStorage.getItem('inv_dept')   || '';
+    var dept = sessionStorage.getItem('inv_dept') || '';
     var person = sessionStorage.getItem('inv_person') || '';
     if (dept) {
       savedDept = dept;
       var sel = document.getElementById('departmentSelect');
-      if (sel) {
-        sel.value = dept;
-        if (sel.value === dept) { savedPerson = person; loadPersonnelForDept(dept, person); }
-      }
+      if (sel) { sel.value = dept; if (sel.value === dept) { savedPerson = person; loadPersonnelForDept(dept, person); } }
     }
   } catch(e){}
   updateLockBadge();
@@ -1252,47 +1209,36 @@ function clearOperator() {
 }
 
 function updateLockBadge() {
-  var badge  = document.getElementById('lockBadge');
-  var dept   = document.getElementById('departmentSelect').value;
+  var dept = document.getElementById('departmentSelect').value;
   var person = document.getElementById('personnelSelect').value;
-  badge.style.display = (dept || person) ? '' : 'none';
+  document.getElementById('lockBadge').style.display = (dept || person) ? '' : 'none';
 }
 
 /* ============================================================
    図番フィールド制御
 ============================================================ */
 function setInfoFieldsEditable(zunoEditable, hinmeiEditable) {
-  var zi = document.getElementById('zunoDisplay');
-  var hi = document.getElementById('hinmeiDisplay');
-  if (zunoEditable) { zi.removeAttribute('readonly'); } else { zi.setAttribute('readonly', true); }
-  if (hinmeiEditable) { hi.removeAttribute('readonly'); } else { hi.setAttribute('readonly', true); }
+  var zi = document.getElementById('zunoDisplay'), hi = document.getElementById('hinmeiDisplay');
+  if (zunoEditable) zi.removeAttribute('readonly'); else zi.setAttribute('readonly', true);
+  if (hinmeiEditable) hi.removeAttribute('readonly'); else hi.setAttribute('readonly', true);
 }
 
 function updateManualSearchBtn() {
   var code = document.getElementById('zunoDisplay').value.trim();
-  document.getElementById('btnManualMasterSearch').style.display =
-    (!cameraActive && code) ? 'flex' : 'none';
+  document.getElementById('btnManualMasterSearch').style.display = (!cameraActive && code) ? 'flex' : 'none';
 }
 
 function onZunoInput() {
-  var inp   = document.getElementById('zunoDisplay');
-  var pos   = inp.selectionStart;
+  var inp = document.getElementById('zunoDisplay'), pos = inp.selectionStart;
   var upper = inp.value.toUpperCase();
-  if (inp.value !== upper) {
-    inp.value = upper;
-    inp.setSelectionRange(pos, pos);
-  }
-  currentZuno = null;
-  updateRegisterBtn();
-  updateManualSearchBtn();
+  if (inp.value !== upper) { inp.value = upper; inp.setSelectionRange(pos, pos); }
+  currentZuno = null; updateRegisterBtn(); updateManualSearchBtn();
 }
 
 function onZunoBlur() {
-  var inp  = document.getElementById('zunoDisplay');
-  var code = inp.value.trim().toUpperCase();
-  inp.value = code;
-  updateRegisterBtn();
-  updateManualSearchBtn();
+  var inp = document.getElementById('zunoDisplay');
+  inp.value = inp.value.trim().toUpperCase();
+  updateRegisterBtn(); updateManualSearchBtn();
 }
 
 function doManualMasterSearch() {
@@ -1309,13 +1255,9 @@ function doManualMasterSearch() {
    OCR関連
 ============================================================ */
 function onOcrPartEdit() {
-  var inp   = document.getElementById('ocrPartInput');
-  var pos   = inp.selectionStart;
+  var inp = document.getElementById('ocrPartInput'), pos = inp.selectionStart;
   var upper = inp.value.toUpperCase();
-  if (inp.value !== upper) {
-    inp.value = upper;
-    inp.setSelectionRange(pos, pos);
-  }
+  if (inp.value !== upper) { inp.value = upper; inp.setSelectionRange(pos, pos); }
   inp.className = 'editing';
   document.getElementById('ocrPartHint').textContent = '✎ 編集中 — 修正後にマスタ検索ボタンを押してください';
   var hasContent = inp.value.trim() && inp.value.trim() !== '----';
@@ -1323,7 +1265,7 @@ function onOcrPartEdit() {
 }
 
 function onOcrPartBlur() {
-  var inp  = document.getElementById('ocrPartInput');
+  var inp = document.getElementById('ocrPartInput');
   var code = inp.value.trim().toUpperCase();
   if (!code || code === '----') return;
   inp.value = code;
@@ -1334,7 +1276,7 @@ function onOcrPartBlur() {
 }
 
 function doMasterSearch() {
-  var inp  = document.getElementById('ocrPartInput');
+  var inp = document.getElementById('ocrPartInput');
   var code = inp.value.trim().toUpperCase();
   if (!code || code === '----') { showToast('⚠️ 図番を入力してください', 'error'); return; }
   inp.value = code; inp.className = '';
@@ -1345,7 +1287,7 @@ function doMasterSearch() {
 }
 
 function applyLookupResult(result, fromOcr) {
-  var zuno     = (result.zuno   || result.part || '').toUpperCase();
+  var zuno     = (result.zuno || result.part || '').toUpperCase();
   var hinmei   = result.hinmei || result.name || '';
   var size     = result.size   || '';
   var unit     = result.unit   || '個';
@@ -1353,49 +1295,28 @@ function applyLookupResult(result, fromOcr) {
     ? result.inMaster
     : (result.success && hinmei && hinmei !== '（マスタ未登録）');
 
-  currentZuno   = zuno;
-  currentHinmei = hinmei;
-  currentSize   = size;
-  currentUnit   = unit;
+  currentZuno = zuno; currentHinmei = hinmei; currentSize = size; currentUnit = unit;
 
   var zi = document.getElementById('zunoDisplay');
   var hi = document.getElementById('hinmeiDisplay');
   var se = document.getElementById('sizeDisplay');
 
-  zi.value     = zuno;
-  zi.className = 'field-value' + (zuno ? ' filled' : '');
-
+  zi.value = zuno; zi.className = 'field-value' + (zuno ? ' filled' : '');
   if (inMaster) {
-    hi.value       = hinmei;
-    hi.className   = 'field-value filled';
-    hi.placeholder = '品名';
+    hi.value = hinmei; hi.className = 'field-value filled'; hi.placeholder = '品名';
   } else {
-    hi.value       = '';
-    hi.className   = 'field-value warn';
+    hi.value = ''; hi.className = 'field-value warn';
     hi.placeholder = '（マスタ未登録 — 品名を手入力してください）';
   }
+  se.textContent = size || '―'; se.className = 'field-value' + (inMaster ? ' filled' : ' warn');
 
-  se.textContent = size || '―';
-  se.className   = 'field-value' + (inMaster ? ' filled' : ' warn');
-
-  if (fromOcr && inMaster) {
-    setInfoFieldsEditable(false, false);
-    isOcrFlow = true;
-  } else if (fromOcr && !inMaster) {
-    setInfoFieldsEditable(true, true);
-    isOcrFlow = true;
-  } else {
-    setInfoFieldsEditable(true, true);
-    isOcrFlow = false;
-  }
-
-  if (!fromOcr) {
-    updateManualSearchBtn();
-  }
+  if (fromOcr && inMaster)  { setInfoFieldsEditable(false, false); isOcrFlow = true; }
+  else if (fromOcr)         { setInfoFieldsEditable(true, true);  isOcrFlow = true; }
+  else                      { setInfoFieldsEditable(true, true);  isOcrFlow = false; updateManualSearchBtn(); }
 
   if (fromOcr) {
     var ocrInp = document.getElementById('ocrPartInput');
-    ocrInp.value     = zuno || ocrInp.value;
+    ocrInp.value = zuno || ocrInp.value;
     ocrInp.className = inMaster ? '' : 'notfound';
     document.getElementById('ocrPartHint').textContent = inMaster
       ? '✅ マスタ確認済 — 数量を入力して登録してください'
@@ -1404,12 +1325,8 @@ function applyLookupResult(result, fromOcr) {
   }
 
   renderDialTotal();
-  showToast(
-    inMaster
-      ? '✅ 読取完了！数量ダイヤルを合わせてください'
-      : '⚠️ マスタ未登録の図番です',
-    inMaster ? 'success' : 'updated'
-  );
+  showToast(inMaster ? '✅ 読取完了！数量ダイヤルを合わせてください' : '⚠️ マスタ未登録の図番です',
+            inMaster ? 'success' : 'updated');
   updateRegisterBtn();
 }
 
@@ -1425,9 +1342,7 @@ function startCamera() {
     video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
   })
   .then(function(stream){
-    cameraStream = stream;
-    cameraActive = true;
-    updateManualSearchBtn();
+    cameraStream = stream; cameraActive = true; updateManualSearchBtn();
     var video = document.getElementById('cameraVideo');
     video.srcObject = stream; video.style.display = 'block';
     document.getElementById('btnCameraStart').style.display = 'none';
@@ -1460,8 +1375,7 @@ function stopCamera() {
   document.getElementById('btnCameraStop').style.display  = 'none';
   document.getElementById('scanSquare').className = 'scan-square';
   document.getElementById('scanHint').style.display = 'none';
-  cameraActive = false;
-  ocrRunning = false;
+  cameraActive = false; ocrRunning = false;
   document.getElementById('scanLabel').textContent = '🔍 下のボタンでOCR開始';
   setInfoFieldsEditable(true, true);
 }
@@ -1483,8 +1397,7 @@ function doOcrTick() {
     .then(function(data){
       guide.classList.remove('scanning');
       if (data.part) {
-        stopCamera();
-        setOcrResult(data.part);
+        stopCamera(); setOcrResult(data.part);
         showToast('✅ 図番を読み取りました。確認後にマスタ検索してください', 'success');
       } else if (data.rawText && data.rawText.trim()) {
         stopCamera();
@@ -1502,19 +1415,23 @@ function doOcrTick() {
 }
 
 /* ============================================================
-   captureOcr() — ★ 修正箇所
+   captureOcr()  ★★★ 修正のポイント ★★★
    -------------------------------------------------------
-   【変更前の問題】
-     ・#cameraVideo の getBoundingClientRect() を基準にしていた
-     ・#ocrGuide の getBoundingClientRect() でガイド位置を測定していた
-     → iOS Safari では video 要素の内部レンダリングと DOM 座標に
-       微妙なズレが生じ、上下方向のズレとなっていた
+   【根本原因】
+     iOS Safari では CSS の aspect-ratio プロパティの評価が
+     遅延する場合があり、カメラ初回起動時に
+       getBoundingClientRect().height → 0 または不正値
+     が返される。stop/start 後は aspect-ratio が確定済みで
+     正常値になるため、2回目以降は動作していた。
 
-   【修正方針】
-     ・基準を #scanSquare（コンテナ）の getBoundingClientRect() に統一
-     ・ガイド位置は CSS 定義値（%）を直接定数として使用
-       （#ocrGuide: left 8%, top 12%, width 84%, height 76%）
-     ・object-fit: cover の数学的変換はそのまま維持
+   【修正（JS側）】
+     dispH = sqRect.height  ← NG（aspect-ratio 遅延の影響を受ける）
+     dispH = dispW / SCAN_ASPECT  ← OK（width から定数比で逆算、DOM不依存）
+
+   【補完（CSS側）】
+     padding-bottom: calc(100% / 2.8) を追加
+     @supports (aspect-ratio: 1) で対応ブラウザでは 0 に戻す
+     → 物理的な高さを保証してビジュアルのズレも防ぐ
    -------------------------------------------------------
 ============================================================ */
 function captureOcr() {
@@ -1522,56 +1439,50 @@ function captureOcr() {
   var vw = video.videoWidth, vh = video.videoHeight;
   if (!vw || !vh) return null;
 
-  // ── ① 基準: scanSquare コンテナの表示サイズ ──
-  var sq     = document.getElementById('scanSquare');
-  var sqRect = sq.getBoundingClientRect();
-  var dispW  = sqRect.width;
-  var dispH  = sqRect.height;
+  // ── ① 表示サイズ取得 ──────────────────────────────────
+  //   dispW: getBoundingClientRect（width:100% → 常に正確）
+  //   dispH: CSS定義の SCAN_ASPECT から逆算 ★修正の核心
+  //          → aspect-ratio の遅延評価・未対応を完全回避
+  var sq    = document.getElementById('scanSquare');
+  var dispW = sq.getBoundingClientRect().width;
+  var dispH = dispW / SCAN_ASPECT;   // ★ sqRect.height は使わない
 
-  // ── ② ocrGuide の CSS 定義値をそのまま使用（DOM計測を廃止） ──
-  //   #ocrGuide { left: 8%; top: 12%; width: 84%; height: 76%; }
-  var GUIDE_L = 0.08;
-  var GUIDE_T = 0.12;
-  var GUIDE_W = 0.84;
-  var GUIDE_H = 0.76;
+  // ── ② ocrGuide の CSS 定義値（% 定数）を直接使用 ──────
+  //   #ocrGuide { left:8%; top:12%; width:84%; height:76%; }
+  var guideLeft   = 0.08 * dispW;
+  var guideTop    = 0.12 * dispH;
+  var guideWidth  = 0.84 * dispW;
+  var guideHeight = 0.76 * dispH;
 
-  var guideLeft   = GUIDE_L * dispW;
-  var guideTop    = GUIDE_T * dispH;
-  var guideWidth  = GUIDE_W * dispW;
-  var guideHeight = GUIDE_H * dispH;
-
-  // ── ③ object-fit: cover のスケール・オフセット計算 ──
-  //   videoAspect > dispAspect → 高さ基準でスケール（左右クリップ）
-  //   videoAspect ≤ dispAspect → 幅基準でスケール（上下クリップ）
-  var dispAspect  = dispW / dispH;
+  // ── ③ object-fit: cover のスケール・オフセット計算 ────
+  var dispAspect  = SCAN_ASPECT;        // = dispW / dispH（定数化）
   var videoAspect = vw / vh;
   var scale, offX, offY;
 
   if (videoAspect > dispAspect) {
+    // 映像が表示枠より横長 → 高さ基準スケール、左右クリップ
     scale = dispH / vh;
-    offX  = (vw * scale - dispW) / 2;  // 左右のはみ出し量（表示px）
+    offX  = (vw * scale - dispW) / 2;
     offY  = 0;
   } else {
+    // 映像が表示枠より縦長 → 幅基準スケール、上下クリップ
     scale = dispW / vw;
     offX  = 0;
-    offY  = (vh * scale - dispH) / 2;  // 上下のはみ出し量（表示px）
+    offY  = (vh * scale - dispH) / 2;
   }
 
-  // ── ④ ガイド枠（表示座標）→ 映像フレーム座標 に変換 ──
-  //   表示px = (映像px × scale) - offset
-  //   → 映像px = (表示px + offset) / scale
+  // ── ④ 表示座標 → 映像フレーム座標 変換 ───────────────
   var sx = Math.round((guideLeft   + offX) / scale);
   var sy = Math.round((guideTop    + offY) / scale);
   var sw = Math.round(guideWidth   / scale);
   var sh = Math.round(guideHeight  / scale);
 
-  // 映像フレーム範囲内にクランプ
   sx = Math.max(0, Math.min(vw - 1, sx));
   sy = Math.max(0, Math.min(vh - 1, sy));
   sw = Math.max(1, Math.min(vw - sx, sw));
   sh = Math.max(1, Math.min(vh - sy, sh));
 
-  // ── ⑤ 映像全体→クロップ→リサイズ ──
+  // ── ⑤ キャプチャ → クロップ → リサイズ ──────────────
   var full = document.createElement('canvas');
   full.width = vw; full.height = vh;
   full.getContext('2d').drawImage(video, 0, 0, vw, vh);
@@ -1589,12 +1500,11 @@ function captureOcr() {
     out.getContext('2d').drawImage(crop, 0, 0, out.width, out.height);
   }
 
-  // ── ⑥ デバッグ用キャンバス更新 ──
+  // ── ⑥ デバッグ表示 ───────────────────────────────────
   var dbgWrap = document.getElementById('ocrDebugWrap');
   var dbgCvs  = document.getElementById('ocrDebugCanvas');
   dbgWrap.style.display = 'block';
-  dbgCvs.width  = out.width;
-  dbgCvs.height = out.height;
+  dbgCvs.width = out.width; dbgCvs.height = out.height;
   dbgCvs.getContext('2d').drawImage(out, 0, 0);
 
   return out.toDataURL('image/jpeg', 0.85).replace(/^data:image\/jpeg;base64,/, '');
@@ -1602,16 +1512,13 @@ function captureOcr() {
 
 function setOcrResult(code) {
   code = code.trim().toUpperCase();
-  var inp  = document.getElementById('ocrPartInput');
-  inp.value     = code;
-  inp.className = '';
-  inp.removeAttribute('readonly');
+  var inp = document.getElementById('ocrPartInput');
+  inp.value = code; inp.className = ''; inp.removeAttribute('readonly');
   document.getElementById('ocrPartHint').textContent    = '修正が必要な場合は直接編集し、マスタ検索してください';
   document.getElementById('ocrResultWrap').style.display = 'block';
   document.getElementById('btnMasterSearch').style.display = 'flex';
   var zi = document.getElementById('zunoDisplay');
-  zi.value     = code;
-  zi.className = 'field-value';
+  zi.value = code; zi.className = 'field-value';
 }
 
 /* ============================================================
@@ -1619,32 +1526,21 @@ function setOcrResult(code) {
 ============================================================ */
 function clearInfoCard() {
   currentZuno = null; currentHinmei = ''; currentSize = ''; currentUnit = '個';
-
   var ocrInp = document.getElementById('ocrPartInput');
-  ocrInp.value     = '----';
-  ocrInp.className = '';
-  document.getElementById('ocrPartHint').textContent       = 'OCR読み取り後、手修正も可能です';
-  document.getElementById('ocrResultWrap').style.display    = 'none';
-  document.getElementById('btnMasterSearch').style.display  = 'none';
-  document.getElementById('ocrDebugWrap').style.display     = 'none';
-
-  var zi = document.getElementById('zunoDisplay');
-  var hi = document.getElementById('hinmeiDisplay');
-  zi.value = ''; hi.value = '';
-  zi.className = 'field-value'; hi.className = 'field-value';
+  ocrInp.value = '----'; ocrInp.className = '';
+  document.getElementById('ocrPartHint').textContent      = 'OCR読み取り後、手修正も可能です';
+  document.getElementById('ocrResultWrap').style.display   = 'none';
+  document.getElementById('btnMasterSearch').style.display = 'none';
+  document.getElementById('ocrDebugWrap').style.display    = 'none';
+  var zi = document.getElementById('zunoDisplay'), hi = document.getElementById('hinmeiDisplay');
+  zi.value = ''; hi.value = ''; zi.className = 'field-value'; hi.className = 'field-value';
   hi.placeholder = '品名（マスタ検索で自動入力・手入力も可）';
-
   document.getElementById('seibanInput').value = '';
-  var se = document.getElementById('sizeDisplay');
-  se.textContent = '―'; se.className = 'field-value';
-
-  isOcrFlow = false;
-  resetDials();
+  var se = document.getElementById('sizeDisplay'); se.textContent = '―'; se.className = 'field-value';
+  isOcrFlow = false; resetDials();
   document.getElementById('inventoryTypeSelect').value = '';
   document.getElementById('registerBtn').disabled = true;
-
-  setInfoFieldsEditable(true, true);
-  updateManualSearchBtn();
+  setInfoFieldsEditable(true, true); updateManualSearchBtn();
   showToast('🗑️ 登録情報をクリアしました', 'updated');
 }
 
@@ -1664,9 +1560,9 @@ function updateRegisterBtn() {
    データ登録
 ============================================================ */
 function registerData() {
-  var now = new Date();
-  var pad = function(n){ return String(n).padStart(2,'0'); };
-  var data = {
+  var now = new Date(), pad = function(n){ return String(n).padStart(2,'0'); };
+  showLoading(true, '登録中…');
+  callGAS('register', {
     date:          now.getFullYear() + '/' + pad(now.getMonth()+1) + '/' + pad(now.getDate()),
     time:          pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()),
     zuno:          document.getElementById('zunoDisplay').value.trim().toUpperCase(),
@@ -1677,18 +1573,13 @@ function registerData() {
     department:    document.getElementById('departmentSelect').value,
     personnel:     document.getElementById('personnelSelect').value,
     inventoryType: document.getElementById('inventoryTypeSelect').value
-  };
-  showLoading(true, '登録中…');
-  callGAS('register', data)
-    .then(function(result){
-      showLoading(false);
-      if (result.success) {
-        openModal('登録しました！', result.updated ? '（既存データを上書きしました）' : '（新規登録）');
-      } else {
-        showToast('❌ ' + result.message, 'error');
-      }
-    })
-    .catch(function(){ showLoading(false); showToast('❌ 通信エラー', 'error'); });
+  })
+  .then(function(result){
+    showLoading(false);
+    if (result.success) openModal('登録しました！', result.updated ? '（既存データを上書きしました）' : '（新規登録）');
+    else showToast('❌ ' + result.message, 'error');
+  })
+  .catch(function(){ showLoading(false); showToast('❌ 通信エラー', 'error'); });
 }
 
 /* ============================================================
@@ -1699,7 +1590,6 @@ function openModal(msg, sub) {
   document.getElementById('modalSub').textContent = sub || '';
   document.getElementById('modalOverlay').classList.add('show');
 }
-
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('show');
   resetInfoOnly();
@@ -1711,39 +1601,26 @@ function closeModal() {
 function resetInfoOnly() {
   if (cameraActive) stopCamera();
   currentZuno = null; currentHinmei = ''; currentSize = ''; currentUnit = '個';
-
   var ocrInp = document.getElementById('ocrPartInput');
-  ocrInp.value     = '----';
-  ocrInp.className = '';
-  document.getElementById('ocrPartHint').textContent       = 'OCR読み取り後、手修正も可能です';
-  document.getElementById('ocrResultWrap').style.display    = 'none';
-  document.getElementById('btnMasterSearch').style.display  = 'none';
-  document.getElementById('ocrDebugWrap').style.display     = 'none';
-
-  var zi = document.getElementById('zunoDisplay');
-  var hi = document.getElementById('hinmeiDisplay');
-  zi.value = ''; hi.value = '';
-  zi.className = 'field-value'; hi.className = 'field-value';
+  ocrInp.value = '----'; ocrInp.className = '';
+  document.getElementById('ocrPartHint').textContent      = 'OCR読み取り後、手修正も可能です';
+  document.getElementById('ocrResultWrap').style.display   = 'none';
+  document.getElementById('btnMasterSearch').style.display = 'none';
+  document.getElementById('ocrDebugWrap').style.display    = 'none';
+  var zi = document.getElementById('zunoDisplay'), hi = document.getElementById('hinmeiDisplay');
+  zi.value = ''; hi.value = ''; zi.className = 'field-value'; hi.className = 'field-value';
   hi.placeholder = '品名（マスタ検索で自動入力・手入力も可）';
-
   document.getElementById('seibanInput').value = '';
-  var se = document.getElementById('sizeDisplay');
-  se.textContent = '―'; se.className = 'field-value';
-
-  isOcrFlow = false;
-  resetDials();
+  var se = document.getElementById('sizeDisplay'); se.textContent = '―'; se.className = 'field-value';
+  isOcrFlow = false; resetDials();
   document.getElementById('inventoryTypeSelect').value = '';
   document.getElementById('registerBtn').disabled = true;
   document.getElementById('scanLabel').textContent = '🔍 下のボタンでOCR開始';
   document.getElementById('scanHint').style.display = 'none';
-
-  setInfoFieldsEditable(true, true);
-  updateManualSearchBtn();
+  setInfoFieldsEditable(true, true); updateManualSearchBtn();
 }
 
-function resetAll() {
-  resetInfoOnly();
-}
+function resetAll() { resetInfoOnly(); }
 
 /* ============================================================
    UI ヘルパー
@@ -1755,8 +1632,7 @@ function showLoading(show, msg) {
 
 function showToast(msg, type) {
   var toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.className = 'show ' + (type || 'success');
+  toast.textContent = msg; toast.className = 'show ' + (type || 'success');
   clearTimeout(toast._t);
   toast._t = setTimeout(function(){ toast.className = (type || 'success'); }, 3000);
 }
